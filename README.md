@@ -71,8 +71,8 @@ npm install
 yarn install
 
 # نسخ ملف البيئة
-cp .env.example .env
-# ثم عدّل .env بمفاتيح Firebase الخاصة بك
+cp .env.example .env.local
+# ثم عدّل .env.local بمفاتيح Firebase الخاصة بك
 ```
 
 ### التشغيل:
@@ -187,6 +187,8 @@ npm run ios
 - [هندسة التطبيق](./docs/ARCHITECTURE.md)
 - [دليل المطورين](./docs/DEVELOPER_GUIDE.md)
 - [API Firebase](./docs/FIREBASE_API.md)
+- [دليل التجربة العملي](./docs/TESTING_GUIDE.md)
+- [قالب تقرير الاختبار](./TEST_REPORT.md)
 
 ---
 
