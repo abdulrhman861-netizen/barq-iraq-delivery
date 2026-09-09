@@ -22,6 +22,7 @@ export const FIREBASE_PATHS = {
   NOTIFICATIONS: 'notifications',
   CAPTAINS: 'captains',
   PAYMENTS: 'payments',
+  AUDIT_LOGS: 'audit_logs',
   ADMIN_STAFF: 'admin_staff',
   TRANSACTIONS: 'transactions',
   SUPPORT_TICKETS: 'support_tickets',
