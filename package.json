@@ -1,0 +1,45 @@
+{
+  "name": "barq-iraq-delivery",
+  "version": "1.0.0",
+  "description": "تطبيق برق العراق للتوصيل - منصة توصيل متكاملة",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios",
+    "build:all": "eas build --platform all",
+    "submit": "eas submit"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-native": "^0.73.0",
+    "expo": "^50.0.0",
+    "expo-location": "^16.7.0",
+    "expo-av": "^13.10.0",
+    "expo-linking": "^6.2.0",
+    "expo-notifications": "^0.27.0",
+    "expo-contacts": "^14.0.0",
+    "firebase": "^10.7.0",
+    "@react-native-async-storage/async-storage": "^1.21.0",
+    "react-native-maps": "^1.7.1",
+    "react-native-gesture-handler": "^2.14.1",
+    "react-native-reanimated": "^3.6.1",
+    "react-native-screens": "^3.27.0",
+    "@react-navigation/native": "^6.1.9",
+    "@react-navigation/bottom-tabs": "^6.5.8",
+    "@react-navigation/stack": "^6.3.16",
+    "axios": "^1.6.0",
+    "moment": "^2.29.4",
+    "prop-types": "^15.8.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@types/react": "^18.2.0",
+    "@types/react-native": "^0.73.0"
+  },
+  "private": true
+}
