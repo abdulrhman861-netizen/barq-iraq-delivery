@@ -1,5 +1,5 @@
 // Context لإدارة الإشعارات
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useEffect } from 'react';
 import {
   sendLocalNotification,
   listenToNotifications,
@@ -59,7 +59,7 @@ export const NotificationProvider = ({ children }) => {
             key.toLowerCase().includes(notificationType.toLowerCase())
         );
 
-        if (!notificationSettings[settingKey]) {
+        if (settingKey && !notificationSettings[settingKey]) {
           console.log('⚠️ Notification type disabled:', notificationType);
           return;
         }
@@ -85,7 +85,7 @@ export const NotificationProvider = ({ children }) => {
 
   // تحديث جميع الإشعارات كمقروءة
   const markAllAsRead = useCallback(() => {
-    setNotifications((prev) =>>
+    setNotifications((prev) =>
       prev.map((notif) => ({ ...notif, isRead: true }))
     );
     setUnreadCount(0);
