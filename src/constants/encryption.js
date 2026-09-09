@@ -1,0 +1,9 @@
+export const ENCRYPTION_ALGORITHMS = {
+  DATA_AT_REST: 'AES-256',
+  DATA_IN_TRANSIT: 'TLS-1.3',
+};
+
+export const KEY_POLICIES = {
+  ROTATION_DAYS: 90,
+  MIN_KEY_LENGTH: 32,
+};
