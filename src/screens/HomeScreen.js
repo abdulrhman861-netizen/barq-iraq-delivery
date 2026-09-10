@@ -1,5 +1,5 @@
 // screens/HomeScreen.js
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,11 @@ import {
   Alert,
 } from 'react-native';
 import { COLORS, SIZES, FONT_SIZES } from '../constants/index';
+import OrdersScreen from './OrdersScreen';
 
 const HomeScreen = ({ onLogout }) => {
+  const [currentScreen, setCurrentScreen] = useState('home');
+
   const handleLogout = () => {
     Alert.alert(
       'تسجيل الخروج',
@@ -29,6 +32,23 @@ const HomeScreen = ({ onLogout }) => {
       ]
     );
   };
+
+  // إذا كان المستخدم يريد عرض صفحة الطلبات
+  if (currentScreen === 'orders') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.backButtonContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setCurrentScreen('home')}
+          >
+            <Text style={styles.backButtonText}>‹ رجوع</Text>
+          </TouchableOpacity>
+        </View>
+        <OrdersScreen />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -59,28 +79,28 @@ const HomeScreen = ({ onLogout }) => {
             icon="📦"
             title="الطلبات"
             subtitle="إنشاء وإدارة طلباتك"
-            onPress={() => Alert.alert('قريباً', 'سيتم إضافة صفحة الطلبات')}
+            onPress={() => setCurrentScreen('orders')}
           />
 
           <MenuItemLarge
             icon="📍"
             title="التتبع الحي"
             subtitle="تابع طلباتك في الوقت الفعلي"
-            onPress={() => Alert.alert('قريباً', 'سيتم إضافة التتبع الحي')}
+            onPress={() => Alert.alert('قريباً', 'سيتم إضافة صفحة التتبع الحي')}
           />
 
           <MenuItemLarge
             icon="💬"
             title="الدردشة"
             subtitle="تواصل مع الكابتنز والمتاجر"
-            onPress={() => Alert.alert('قريباً', 'سيتم إضافة الدردشة')}
+            onPress={() => Alert.alert('قريباً', 'سيتم إضافة صفحة الدردشة')}
           />
 
           <MenuItemLarge
             icon="⭐"
             title="التقييمات"
             subtitle="قيّم الطلبات والخدمات"
-            onPress={() => Alert.alert('قريباً', 'سيتم إضافة التقييمات')}
+            onPress={() => Alert.alert('قريباً', 'سيتم إضافة صفحة التقييمات')}
           />
         </View>
 
@@ -159,6 +179,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.gray,
+  },
+  backButtonContainer: {
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+  },
+  backButton: {
+    paddingVertical: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    alignSelf: 'flex-end',
+  },
+  backButtonText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.base,
+    fontWeight: '600',
   },
   scrollContent: {
     flexGrow: 1,
