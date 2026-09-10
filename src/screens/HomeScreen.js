@@ -1,5 +1,5 @@
 // screens/HomeScreen.js
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,12 @@ import {
 import { COLORS, SIZES, FONT_SIZES } from '../constants/index';
 import OrdersScreen from './OrdersScreen';
 import TrackingScreen from './TrackingScreen';
+import ChatScreen from './ChatScreen';
+import { AuthContext } from '../contexts/AuthContext';
 
 const HomeScreen = ({ onLogout }) => {
   const [currentScreen, setCurrentScreen] = useState('home');
+  const { user } = useContext(AuthContext);
 
   const handleLogout = () => {
     Alert.alert(
@@ -68,6 +71,21 @@ const HomeScreen = ({ onLogout }) => {
     );
   }
 
+  if (currentScreen === 'chat') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ChatScreen
+          onBack={() => setCurrentScreen('home')}
+          orderId="ORD001"
+          customerId={user?.id || 'customer_demo_1'}
+          driverId="driver_demo_1"
+          currentUserId={user?.id || 'customer_demo_1'}
+          title="دردشة الطلب ORD001"
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -111,7 +129,7 @@ const HomeScreen = ({ onLogout }) => {
             icon="💬"
             title="الدردشة"
             subtitle="تواصل مع الكابتنز والمتاجر"
-            onPress={() => Alert.alert('قريباً', 'سيتم إضافة صفحة الدردشة')}
+            onPress={() => setCurrentScreen('chat')}
           />
 
           <MenuItemLarge
