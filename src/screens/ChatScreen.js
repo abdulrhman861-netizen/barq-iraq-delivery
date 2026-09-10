@@ -47,6 +47,7 @@ const ChatScreen = ({
     const initializeChat = async () => {
       setIsLoading(true);
       setLoadError(null);
+      setMessages([]);
       try {
         const chat = await getOrCreateOrderChat({ orderId, customerId, driverId });
         if (!isMounted) return;
@@ -62,12 +63,14 @@ const ChatScreen = ({
           () => {
             if (!isMounted) return;
             setLoadError('تعذر تحميل الرسائل، حاول مرة أخرى');
+            setMessages([]);
             setIsLoading(false);
           }
         );
       } catch (e) {
         if (!isMounted) return;
         setLoadError('تعذر تهيئة المحادثة');
+        setMessages([]);
         setIsLoading(false);
       }
     };

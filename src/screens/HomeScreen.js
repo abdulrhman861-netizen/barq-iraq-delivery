@@ -91,7 +91,7 @@ const HomeScreen = ({ onLogout }) => {
             openOrderChat({
               ...order,
               id: order?.id || order?.orderNumber,
-              customerId: user?.id || 'customer_demo_1',
+              customerId: user?.id,
               driverId: order?.driverId || order?.captainId || order?.driverPhone || null,
             })
           }

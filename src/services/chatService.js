@@ -1,20 +1,20 @@
 import {
-  addDoc,
   collection,
   doc,
-  getDocs,
-  limit,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
-  where,
   writeBatch,
 } from 'firebase/firestore';
 import { messageFromFirestore, messageToFirestore } from '../models/Message';
 import { getFirebaseFirestore } from './firebase';
 
 const CHATS_COLLECTION = 'chats';
+const buildChatId = (orderId, customerId, driverId) =>
+  `${orderId}__${customerId}__${driverId}`.replace(/\//g, '_');
 
 export const getOrCreateOrderChat = async ({ orderId, customerId, driverId }) => {
   if (!orderId || !customerId || !driverId) {
@@ -22,35 +22,32 @@ export const getOrCreateOrderChat = async ({ orderId, customerId, driverId }) =>
   }
 
   const db = getFirebaseFirestore();
-  const chatsRef = collection(db, CHATS_COLLECTION);
-  const chatQuery = query(
-    chatsRef,
-    where('orderId', '==', orderId),
-    where('customerId', '==', customerId),
-    where('driverId', '==', driverId),
-    limit(1)
-  );
+  const chatId = buildChatId(orderId, customerId, driverId);
+  const chatRef = doc(db, CHATS_COLLECTION, chatId);
 
-  const existingChat = await getDocs(chatQuery);
-  if (!existingChat.empty) {
-    return { id: existingChat.docs[0].id, ...existingChat.docs[0].data() };
-  }
-
-  const createdChatRef = await addDoc(chatsRef, {
-    orderId,
-    customerId,
-    driverId,
-    lastMessage: '',
-    lastMessageAt: null,
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(chatRef);
+    if (!snapshot.exists()) {
+      transaction.set(chatRef, {
+        orderId,
+        customerId,
+        driverId,
+        lastMessage: '',
+        lastMessageAt: null,
+      });
+    }
   });
 
+  const chatSnapshot = await getDoc(chatRef);
   return {
-    id: createdChatRef.id,
-    orderId,
-    customerId,
-    driverId,
-    lastMessage: '',
-    lastMessageAt: null,
+    id: chatSnapshot.id,
+    ...(chatSnapshot.data() || {
+      orderId,
+      customerId,
+      driverId,
+      lastMessage: '',
+      lastMessageAt: null,
+    }),
   };
 };
 
