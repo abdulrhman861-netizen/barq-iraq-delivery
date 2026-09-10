@@ -119,12 +119,11 @@ const ChatScreen = ({
   };
 
   const headerTitle = title || (orderId ? `دردشة الطلب ${orderId}` : 'الدردشة');
-
-  useEffect(() => {
-    if (messages.length && messagesListRef.current) {
+  const scrollToLatestMessage = () => {
+    if (messagesListRef.current) {
       messagesListRef.current.scrollToEnd({ animated: true });
     }
-  }, [messages]);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,6 +144,9 @@ const ChatScreen = ({
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => setRetryKey((prev) => prev + 1)}
+            accessibilityRole="button"
+            accessibilityLabel="إعادة تحميل المحادثة"
+            accessibilityHint="يعيد محاولة تحميل رسائل المحادثة"
           >
             <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
           </TouchableOpacity>
@@ -163,6 +165,8 @@ const ChatScreen = ({
             accessibilityLabel="قائمة الرسائل"
             accessibilityHint="يتم تحديث الرسائل تلقائياً عند وصول رسائل جديدة"
             accessibilityLiveRegion="polite"
+            onContentSizeChange={scrollToLatestMessage}
+            onLayout={scrollToLatestMessage}
             ListEmptyComponent={
               <View style={styles.centerState}>
                 <Text style={styles.stateText}>لا توجد رسائل بعد</Text>

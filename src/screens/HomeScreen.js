@@ -105,7 +105,11 @@ const HomeScreen = ({ onLogout }) => {
     return (
       <SafeAreaView style={styles.container}>
         <ChatScreen
-          onBack={() => setCurrentScreen(activeChatContext?.sourceScreen || 'home')}
+          onBack={() => {
+            const backScreen = activeChatContext?.sourceScreen || 'home';
+            setActiveChatContext(null);
+            setCurrentScreen(backScreen);
+          }}
           orderId={activeChatContext?.orderId}
           customerId={activeChatContext?.customerId}
           driverId={activeChatContext?.driverId}
