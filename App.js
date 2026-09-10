@@ -1,8 +1,6 @@
-// App.js - الملف الرئيسي مع دمج جميع Contexts والشاشات
+// App.js - الملف الرئيسي
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 
 // Contexts
 import { AuthProvider } from './src/contexts/AuthContext';
@@ -12,22 +10,10 @@ import { RatingProvider } from './src/contexts/RatingContext';
 import { ChatProvider } from './src/contexts/ChatContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
 
-// Screens
-import TrackingScreen from './src/screens/TrackingScreen';
-import ChatScreen from './src/screens/ChatScreen';
-import ChatListScreen from './src/screens/ChatListScreen';
-import RatingScreen from './src/screens/RatingScreen';
-import RatingsListScreen from './src/screens/RatingsListScreen';
-import UserProfileScreen from './src/screens/UserProfileScreen';
-import NotificationCenterScreen from './src/screens/NotificationCenterScreen';
-import NotificationSettingsScreen from './src/screens/NotificationSettingsScreen';
-
 // Services
 import { initializeFirebase } from './src/services/firebase';
 import { initializeNotifications } from './src/services/notifications';
-
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+import { COLORS, SIZES, FONT_SIZES } from './src/constants/index';
 
 const App = () => {
   useEffect(() => {
@@ -45,33 +31,27 @@ const App = () => {
           <RatingProvider>
             <ChatProvider>
               <NotificationProvider>
-                <NavigationContainer>
-                  <Stack.Navigator
-                    screenOptions={{
-                      headerShown: false,
-                    }}
-                  >
-                    <Stack.Screen
-                      name="MainTabs"
-                      component={MainTabNavigator}
-                    />
-                    <Stack.Screen name="Tracking" component={TrackingScreen} />
-                    <Stack.Screen name="Chat" component={ChatScreen} />
-                    <Stack.Screen name="Rating" component={RatingScreen} />
-                    <Stack.Screen
-                      name="RatingsList"
-                      component={RatingsListScreen}
-                    />
-                    <Stack.Screen
-                      name="UserProfile"
-                      component={UserProfileScreen}
-                    />
-                    <Stack.Screen
-                      name="NotificationSettings"
-                      component={NotificationSettingsScreen}
-                    />
-                  </Stack.Navigator>
-                </NavigationContainer>
+                <SafeAreaView style={styles.container}>
+                  <View style={styles.header}>
+                    <Text style={styles.title}>🚀 برق العراق</Text>
+                    <Text style={styles.subtitle}>تطبيق التوصيل السريع</Text>
+                  </View>
+
+                  <View style={styles.content}>
+                    <Text style={styles.welcome}>أهلاً وسهلاً! 👋</Text>
+                    <Text style={styles.message}>
+                      التطبيق قيد التطوير حالياً
+                    </Text>
+                    <Text style={styles.status}>✅ جميع الخدمات متصلة</Text>
+                  </View>
+
+                  <View style={styles.features}>
+                    <FeatureItem icon="💬" title="الدردشة" />
+                    <FeatureItem icon="📦" title="الطلبات" />
+                    <FeatureItem icon="📍" title="التتبع" />
+                    <FeatureItem icon="⭐" title="التقييمات" />
+                  </View>
+                </SafeAreaView>
               </NotificationProvider>
             </ChatProvider>
           </RatingProvider>
@@ -81,35 +61,78 @@ const App = () => {
   );
 };
 
-const MainTabNavigator = () => {
-  return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#FF6B35',
-        tabBarInactiveTintColor: '#999',
-      }}
-    >
-      <Tab.Screen
-        name="ChatList"
-        component={ChatListScreen}
-        options={{
-          title: 'الرسائل',
-          tabBarLabel: 'الرسائل',
-          tabBarIcon: () => '💬',
-        }}
-      />
-      <Tab.Screen
-        name="NotificationCenter"
-        component={NotificationCenterScreen}
-        options={{
-          title: 'الإشعارات',
-          tabBarLabel: 'الإشعارات',
-          tabBarIcon: () => '🔔',
-        }}
-      />
-    </Tab.Navigator>
-  );
-};
+const FeatureItem = ({ icon, title }) => (
+  <View style={styles.feature}>
+    <Text style={styles.featureIcon}>{icon}</Text>
+    <Text style={styles.featureTitle}>{title}</Text>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  header: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SIZES.xl,
+    paddingHorizontal: SIZES.md,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: FONT_SIZES.xxxl,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    marginBottom: SIZES.xs,
+  },
+  subtitle: {
+    fontSize: FONT_SIZES.base,
+    color: COLORS.white,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.md,
+  },
+  welcome: {
+    fontSize: FONT_SIZES.xxxl,
+    fontWeight: 'bold',
+    color: COLORS.darkGray,
+    marginBottom: SIZES.md,
+  },
+  message: {
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.gray,
+    marginBottom: SIZES.md,
+    textAlign: 'center',
+  },
+  status: {
+    fontSize: FONT_SIZES.base,
+    color: COLORS.success,
+    fontWeight: '600',
+  },
+  features: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: SIZES.xl,
+    paddingHorizontal: SIZES.md,
+    backgroundColor: COLORS.gray,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  feature: {
+    alignItems: 'center',
+  },
+  featureIcon: {
+    fontSize: FONT_SIZES.huge,
+    marginBottom: SIZES.xs,
+  },
+  featureTitle: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.darkGray,
+    fontWeight: '600',
+  },
+});
 
 export default App;
