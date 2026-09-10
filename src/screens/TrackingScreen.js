@@ -1,285 +1,599 @@
-// شاشة تتبع الطلب الحي
-import React, { useState, useEffect, useContext } from 'react';
+// screens/TrackingScreen.js
+import React, { useState, useEffect } from 'react';
 import {
   View,
-  StyleSheet,
   Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
   SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Dimensions,
 } from 'react-native';
-import { TrackingContext } from '../../contexts/TrackingContext';
-import { OrderContext } from '../../contexts/OrderContext';
-import LiveTrackingMap from '../../components/LiveTrackingMap';
-import { COLORS, SIZES, FONT_SIZES } from '../../constants/index';
+import { COLORS, SIZES, FONT_SIZES } from '../constants/index';
 
-const TrackingScreen = ({ route, navigation }) => {
-  const { orderId } = route.params || {};
-  const { captainLocation, isTracking, eta, distance, startCaptainTracking, stopTracking, getCaptainLocationFromDB } = useContext(TrackingContext);
-  const { orders } = useContext(OrderContext);
-  
-  const [order, setOrder] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [unwatch, setUnwatch] = useState(null);
+const { width } = Dimensions.get('window');
 
+const TrackingScreen = () => {
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [driverLocation, setDriverLocation] = useState({ x: 30, y: 40 });
+
+  // بيانات الطلبات قيد التوصيل
+  const [activeOrders] = useState([
+    {
+      id: '1',
+      orderNumber: '#ORD001',
+      merchant: 'مطعم الأرز',
+      status: 'قيد التوصيل',
+      progress: 60,
+      pickupLocation: 'شارع الرشيد',
+      deliveryLocation: 'المنصور',
+      driverName: 'أحمد محمد',
+      driverPhone: '07901234567',
+      driverRating: 4.8,
+      eta: '5 دقائق',
+      distance: '2.3 كم',
+    },
+    {
+      id: '2',
+      orderNumber: '#ORD002',
+      merchant: 'مخبزة الفرات',
+      status: 'تم التوصيل',
+      progress: 100,
+      pickupLocation: 'كركوك سنتر',
+      deliveryLocation: 'الكاظمية',
+      driverName: 'علي حسن',
+      driverPhone: '07902345678',
+      driverRating: 5.0,
+      eta: 'وصل',
+      distance: '0 كم',
+    },
+  ]);
+
+  // محاكاة حركة السائق
   useEffect(() => {
-    if (orders && orderId) {
-      const foundOrder = orders.find((o) => o.id === orderId);
-      setOrder(foundOrder);
-      setIsLoading(false);
-    }
-  }, [orders, orderId]);
+    const interval = setInterval(() => {
+      setDriverLocation(prev => ({
+        x: prev.x + Math.random() * 3 - 1.5,
+        y: prev.y + Math.random() * 3 - 1.5,
+      }));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
-  useEffect(() => {
-    if (order && order.captainId && !isTracking) {
-      startTracking();
-    }
-
-    return () => {
-      if (unwatch) {
-        stopTracking(unwatch);
-      }
-    };
-  }, [order]);
-
-  const startTracking = async () => {
-    try {
-      if (order && order.captainId) {
-        const unwatchFn = await startCaptainTracking(order.captainId);
-        setUnwatch(unwatchFn);
-      }
-    } catch (error) {
-      Alert.alert('خطأ', 'فشل بدء التتبع');
-      console.error('❌ Error starting tracking:', error);
-    }
+  const handleCallDriver = (phone) => {
+    Alert.alert('اتصال', `سيتم الاتصال برقم ${phone}`);
   };
 
-  const handleStopTracking = () => {
-    if (unwatch) {
-      stopTracking(unwatch);
-      setUnwatch(null);
-      Alert.alert('تم', 'تم إيقاف التتبع');
-    }
+  const handleChatDriver = () => {
+    Alert.alert('دردشة', 'فتح نافذة الدردشة مع السائق');
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>جاري تحميل البيانات...</Text>
-      </SafeAreaView>
-    );
-  }
+  const handleShareLocation = () => {
+    Alert.alert('مشاركة الموقع', 'تم مشاركة موقعك مع السائق');
+  };
 
-  if (!order) {
+  const renderMapSimulation = () => {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>لم يتم العثور على الطلب</Text>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
+      <View style={styles.mapContainer}>
+        {/* خطوط الطريق */}
+        <View style={styles.mapBackground}>
+          <Text style={styles.mapText}>🗺️ خريطة التتبع</Text>
+          
+          {/* نقطة البداية */}
+          <View style={[styles.locationPin, styles.startPin]}>
+            <Text style={styles.pinIcon}>📍</Text>
+          </View>
+
+          {/* موقع السائق الحالي */}
+          <View
+            style={[
+              styles.driverPin,
+              {
+                left: `${Math.max(0, Math.min(100, driverLocation.x))}%`,
+                top: `${Math.max(0, Math.min(100, driverLocation.y))}%`,
+              },
+            ]}
           >
-            <Text style={styles.backButtonText}>العودة</Text>
+            <Text style={styles.driverIcon}>🚗</Text>
+          </View>
+
+          {/* نقطة الوجهة */}
+          <View style={[styles.locationPin, styles.endPin]}>
+            <Text style={styles.pinIcon}>🏠</Text>
+          </View>
+
+          {/* خط التقدم */}
+          <View style={styles.progressLine} />
+        </View>
+      </View>
+    );
+  };
+
+  const renderOrderDetails = (order) => {
+    return (
+      <View key={order.id} style={styles.orderDetailsCard}>
+        {/* الرأس */}
+        <View style={styles.detailsHeader}>
+          <View>
+            <Text style={styles.orderNum}>{order.orderNumber}</Text>
+            <Text style={styles.merchantName}>{order.merchant}</Text>
+          </View>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusIcon}>🚗</Text>
+            <Text style={styles.statusText}>{order.status}</Text>
+          </View>
+        </View>
+
+        {/* شريط التقدم */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBarBackground}>
+            <View
+              style={[styles.progressBar, { width: `${order.progress}%` }]}
+            />
+          </View>
+          <Text style={styles.progressText}>{order.progress}%</Text>
+        </View>
+
+        {/* معلومات الموقع */}
+        <View style={styles.locationInfo}>
+          <View style={styles.locationItem}>
+            <Text style={styles.locationLabel}>📍 من:</Text>
+            <Text style={styles.locationValue}>{order.pickupLocation}</Text>
+          </View>
+          <View style={styles.arrow}>
+            <Text style={styles.arrowIcon}>→</Text>
+          </View>
+          <View style={styles.locationItem}>
+            <Text style={styles.locationLabel}>🏠 إلى:</Text>
+            <Text style={styles.locationValue}>{order.deliveryLocation}</Text>
+          </View>
+        </View>
+
+        {/* معلومات السائق */}
+        <View style={styles.driverInfo}>
+          <View style={styles.driverHeader}>
+            <Text style={styles.driverIcon}>👤 السائق</Text>
+          </View>
+          
+          <View style={styles.driverCard}>
+            <View style={styles.driverLeftSection}>
+              <Text style={styles.driverAvatar}>👨‍🚗</Text>
+            </View>
+
+            <View style={styles.driverMiddleSection}>
+              <Text style={styles.driverName}>{order.driverName}</Text>
+              <View style={styles.ratingContainer}>
+                <Text style={styles.stars}>⭐ {order.driverRating}</Text>
+              </View>
+            </View>
+
+            <View style={styles.driverRightSection}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => handleCallDriver(order.driverPhone)}
+              >
+                <Text style={styles.iconButtonText}>📞</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={handleChatDriver}
+              >
+                <Text style={styles.iconButtonText}>💬</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* معلومات إضافية */}
+        <View style={styles.additionalInfo}>
+          <InfoRow icon="⏱️" label="الوقت المتبقي:" value={order.eta} />
+          <InfoRow icon="🛣️" label="المسافة:" value={order.distance} />
+        </View>
+
+        {/* الأزرار الإجرائية */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.shareButton} onPress={handleShareLocation}>
+            <Text style={styles.shareButtonText}>مشاركة الموقع 📤</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>تتبع الطلب #{order.id}</Text>
-        <Text style={styles.headerSubtitle}>
-          {isTracking ? '🟢 قيد التتبع' : '⚫ غير مفعل'}
-        </Text>
-      </View>
-
-      {/* الخريطة */}
-      <LiveTrackingMap
-        merchantLat={order.merchantLat}
-        merchantLng={order.merchantLng}
-        captainLat={captainLocation?.latitude}
-        captainLng={captainLocation?.longitude}
-        customerLat={order.customerLat}
-        customerLng={order.customerLng}
-        orderId={orderId}
-      />
-
-      {/* معلومات تفصيلية */}
-      <ScrollView style={styles.infoContainer}>
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>📍 معلومات التتبع</Text>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>المسافة المتبقية:</Text>
-            <Text style={styles.value}>{distance ? `${distance} كم` : 'جاري الحساب...'}</Text>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>الوقت المتوقع:</Text>
-            <Text style={styles.value}>{eta ? `${eta} دقيقة` : 'جاري الحساب...'}</Text>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>حالة الطلب:</Text>
-            <Text style={[styles.value, { color: COLORS.warning }]}>
-              {order.status}
-            </Text>
-          </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>التتبع الحي</Text>
+          <Text style={styles.headerSubtitle}>
+            عدد الطلبات الجارية: {activeOrders.length}
+          </Text>
         </View>
 
+        {/* Map Simulation */}
+        <View style={styles.mapSection}>
+          {renderMapSimulation()}
+        </View>
+
+        {/* Active Orders */}
+        <View style={styles.ordersSection}>
+          <Text style={styles.sectionTitle}>الطلبات قيد التوصيل</Text>
+          {activeOrders.map(order => renderOrderDetails(order))}
+        </View>
+
+        {/* Info Section */}
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>👤 بيانات الكابتن</Text>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>الاسم:</Text>
-            <Text style={styles.value}>{order.captainName || 'غير محدد'}</Text>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>الهاتف:</Text>
-            <Text style={styles.value}>{order.captainPhone || 'غير محدد'}</Text>
-          </View>
-
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>المركبة:</Text>
-            <Text style={styles.value}>{order.vehicleType || 'غير محددة'}</Text>
-          </View>
+          <Text style={styles.infoTitle}>💡 معلومات مهمة</Text>
+          <InfoBox
+            icon="📞"
+            title="تواصل مع السائق"
+            description="يمكنك الاتصال أو إرسال رسائل للسائق مباشرة"
+          />
+          <InfoBox
+            icon="🚫"
+            title="إلغاء الطلب"
+            description="يمكنك إلغاء الطلب قبل وصول السائق إليك"
+          />
+          <InfoBox
+            icon="⭐"
+            title="تقييم السائق"
+            description="قيّم السائق بعد وصول الطلب"
+          />
         </View>
       </ScrollView>
-
-      {/* أزرار التحكم */}
-      <View style={styles.buttonContainer}>
-        {isTracking ? (
-          <TouchableOpacity
-            style={[styles.button, styles.stopButton]}
-            onPress={handleStopTracking}
-          >
-            <Text style={styles.buttonText}>🛑 إيقاف التتبع</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.button, styles.startButton]}
-            onPress={startTracking}
-          >
-            <Text style={styles.buttonText}>▶️ بدء التتبع</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.button, styles.backButton]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.buttonText}>← رجوع</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
 
+const InfoRow = ({ icon, label, value }) => (
+  <View style={styles.infoRow}>
+    <Text style={styles.infoIcon}>{icon}</Text>
+    <Text style={styles.infoLabel}>{label}</Text>
+    <Text style={styles.infoValue}>{value}</Text>
+  </View>
+);
+
+const InfoBox = ({ icon, title, description }) => (
+  <View style={styles.infoBox}>
+    <Text style={styles.infoBoxIcon}>{icon}</Text>
+    <View style={styles.infoBoxContent}>
+      <Text style={styles.infoBoxTitle}>{title}</Text>
+      <Text style={styles.infoBoxDescription}>{description}</Text>
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: COLORS.gray,
   },
-  loadingText: {
-    marginTop: SIZES.md,
-    fontSize: FONT_SIZES.base,
-    color: COLORS.darkGray,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: SIZES.xl,
   },
   header: {
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.sm,
     backgroundColor: COLORS.primary,
+    paddingVertical: SIZES.lg,
+    paddingHorizontal: SIZES.md,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerTitle: {
-    fontSize: FONT_SIZES.xl,
+    fontSize: FONT_SIZES.xxxl,
     fontWeight: 'bold',
     color: COLORS.white,
+    textAlign: 'right',
   },
   headerSubtitle: {
     fontSize: FONT_SIZES.base,
     color: COLORS.white,
+    opacity: 0.8,
     marginTop: SIZES.xs,
+    textAlign: 'right',
   },
-  infoContainer: {
-    flex: 1,
-    padding: SIZES.md,
+  mapSection: {
+    margin: SIZES.md,
   },
-  infoSection: {
-    marginBottom: SIZES.md,
-    backgroundColor: COLORS.gray,
-    padding: SIZES.md,
-    borderRadius: SIZES.sm,
+  mapContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 15,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  mapBackground: {
+    width: '100%',
+    height: 250,
+    backgroundColor: '#E8F5E9',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapText: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+    color: COLORS.darkGray,
+    position: 'absolute',
+    top: SIZES.md,
+    left: SIZES.md,
+  },
+  locationPin: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 25,
+  },
+  startPin: {
+    top: '20%',
+    left: '20%',
+  },
+  endPin: {
+    bottom: '20%',
+    right: '20%',
+  },
+  pinIcon: {
+    fontSize: FONT_SIZES.huge,
+  },
+  driverPin: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 25,
+  },
+  driverIcon: {
+    fontSize: FONT_SIZES.huge,
+  },
+  progressLine: {
+    position: 'absolute',
+    width: '60%',
+    height: 3,
+    backgroundColor: COLORS.primary,
+    top: '50%',
+    left: '20%',
+  },
+  ordersSection: {
+    paddingHorizontal: SIZES.md,
+    marginBottom: SIZES.xl,
   },
   sectionTitle: {
     fontSize: FONT_SIZES.lg,
     fontWeight: 'bold',
     color: COLORS.darkGray,
-    marginBottom: SIZES.sm,
+    marginBottom: SIZES.md,
+    textAlign: 'right',
   },
-  infoItem: {
+  orderDetailsCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 15,
+    padding: SIZES.md,
+    marginBottom: SIZES.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  detailsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: SIZES.sm,
+    alignItems: 'center',
+    marginBottom: SIZES.md,
+    paddingBottom: SIZES.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.lightGray,
   },
-  label: {
+  orderNum: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    color: COLORS.darkGray,
+  },
+  merchantName: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+    marginTop: SIZES.xs,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+    borderRadius: 10,
+  },
+  statusIcon: {
+    fontSize: FONT_SIZES.base,
+    marginRight: SIZES.sm,
+  },
+  statusText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+  },
+  progressContainer: {
+    marginBottom: SIZES.lg,
+  },
+  progressBarBackground: {
+    width: '100%',
+    height: 10,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 5,
+    overflow: 'hidden',
+    marginBottom: SIZES.sm,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+    borderRadius: 5,
+  },
+  progressText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+    textAlign: 'right',
+  },
+  locationInfo: {
+    marginBottom: SIZES.lg,
+  },
+  locationItem: {
+    marginVertical: SIZES.sm,
+  },
+  locationLabel: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+    marginBottom: SIZES.xs,
+  },
+  locationValue: {
     fontSize: FONT_SIZES.base,
     color: COLORS.darkGray,
     fontWeight: '600',
+    backgroundColor: COLORS.gray,
+    padding: SIZES.sm,
+    borderRadius: 8,
   },
-  value: {
-    fontSize: FONT_SIZES.base,
-    color: COLORS.primary,
-    fontWeight: 'bold',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  arrow: {
     alignItems: 'center',
+    marginVertical: SIZES.sm,
   },
-  errorText: {
+  arrowIcon: {
     fontSize: FONT_SIZES.lg,
-    color: COLORS.danger,
+    color: COLORS.primary,
+  },
+  driverInfo: {
+    marginBottom: SIZES.lg,
+    paddingBottom: SIZES.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  driverHeader: {
     marginBottom: SIZES.md,
   },
-  buttonContainer: {
+  driverCard: {
     flexDirection: 'row',
-    padding: SIZES.md,
-    gap: SIZES.md,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: SIZES.md,
-    borderRadius: SIZES.sm,
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.gray,
+    padding: SIZES.md,
+    borderRadius: 12,
   },
-  startButton: {
-    backgroundColor: COLORS.success,
+  driverLeftSection: {
+    marginRight: SIZES.md,
   },
-  stopButton: {
-    backgroundColor: COLORS.danger,
+  driverAvatar: {
+    fontSize: FONT_SIZES.huge,
   },
-  backButton: {
-    backgroundColor: COLORS.secondary,
+  driverMiddleSection: {
+    flex: 1,
   },
-  buttonText: {
-    color: COLORS.white,
+  driverName: {
     fontSize: FONT_SIZES.base,
     fontWeight: 'bold',
+    color: COLORS.darkGray,
+  },
+  ratingContainer: {
+    marginTop: SIZES.xs,
+  },
+  stars: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.warning,
+    fontWeight: '600',
+  },
+  driverRightSection: {
+    flexDirection: 'row',
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SIZES.sm,
+  },
+  iconButtonText: {
+    fontSize: FONT_SIZES.lg,
+  },
+  additionalInfo: {
+    marginBottom: SIZES.lg,
+    paddingBottom: SIZES.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: SIZES.sm,
+  },
+  infoIcon: {
+    fontSize: FONT_SIZES.lg,
+  },
+  infoLabel: {
+    flex: 1,
+    fontSize: FONT_SIZES.base,
+    color: COLORS.gray,
+    marginLeft: SIZES.md,
+  },
+  infoValue: {
+    fontSize: FONT_SIZES.base,
+    fontWeight: 'bold',
+    color: COLORS.darkGray,
+  },
+  actionButtons: {
+    gap: SIZES.md,
+  },
+  shareButton: {
+    backgroundColor: COLORS.success,
+    paddingVertical: SIZES.md,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  shareButtonText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.base,
+    fontWeight: '600',
+  },
+  infoSection: {
+    paddingHorizontal: SIZES.md,
+  },
+  infoTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    color: COLORS.darkGray,
+    marginBottom: SIZES.md,
+    textAlign: 'right',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: COLORS.white,
+    padding: SIZES.md,
+    borderRadius: 12,
+    marginBottom: SIZES.md,
+  },
+  infoBoxIcon: {
+    fontSize: FONT_SIZES.lg,
+    marginRight: SIZES.md,
+  },
+  infoBoxContent: {
+    flex: 1,
+  },
+  infoBoxTitle: {
+    fontSize: FONT_SIZES.base,
+    fontWeight: 'bold',
+    color: COLORS.darkGray,
+    marginBottom: SIZES.xs,
+  },
+  infoBoxDescription: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
   },
 });
 
