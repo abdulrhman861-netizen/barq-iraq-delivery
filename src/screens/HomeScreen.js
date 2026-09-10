@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { COLORS, SIZES, FONT_SIZES } from '../constants/index';
 import OrdersScreen from './OrdersScreen';
+import TrackingScreen from './TrackingScreen';
 
 const HomeScreen = ({ onLogout }) => {
   const [currentScreen, setCurrentScreen] = useState('home');
@@ -46,6 +47,23 @@ const HomeScreen = ({ onLogout }) => {
           </TouchableOpacity>
         </View>
         <OrdersScreen />
+      </SafeAreaView>
+    );
+  }
+
+  // إذا كان المستخدم يريد عرض صفحة التتبع الحي
+  if (currentScreen === 'tracking') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.backButtonContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setCurrentScreen('home')}
+          >
+            <Text style={styles.backButtonText}>‹ رجوع</Text>
+          </TouchableOpacity>
+        </View>
+        <TrackingScreen />
       </SafeAreaView>
     );
   }
@@ -86,7 +104,7 @@ const HomeScreen = ({ onLogout }) => {
             icon="📍"
             title="التتبع الحي"
             subtitle="تابع طلباتك في الوقت الفعلي"
-            onPress={() => Alert.alert('قريباً', 'سيتم إضافة صفحة التتبع الحي')}
+            onPress={() => setCurrentScreen('tracking')}
           />
 
           <MenuItemLarge
