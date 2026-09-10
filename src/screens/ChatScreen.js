@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -34,6 +34,7 @@ const ChatScreen = ({
   const [loadError, setLoadError] = useState(null);
   const [sendError, setSendError] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
+  const messagesListRef = useRef(null);
 
   const activeUserId = useMemo(
     () => currentUserId || customerId,
@@ -119,6 +120,12 @@ const ChatScreen = ({
 
   const headerTitle = title || (orderId ? `دردشة الطلب ${orderId}` : 'الدردشة');
 
+  useEffect(() => {
+    if (messages.length && messagesListRef.current) {
+      messagesListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -148,6 +155,7 @@ const ChatScreen = ({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <FlatList
+            ref={messagesListRef}
             data={messages}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}

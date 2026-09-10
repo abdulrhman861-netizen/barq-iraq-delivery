@@ -39,7 +39,7 @@ const HomeScreen = ({ onLogout }) => {
   };
 
   const openOrderChat = (order) => {
-    const orderId = order?.id || order?.orderNumber;
+    const orderId = order?.orderId || order?.orderNumber || order?.id;
     const customerId = order?.customerId || user?.id;
     const driverId = order?.driverId || order?.captainId;
 
@@ -91,7 +91,7 @@ const HomeScreen = ({ onLogout }) => {
           onOpenChat={(order) =>
             openOrderChat({
               ...order,
-              id: order?.id || order?.orderNumber,
+              orderId: order?.orderId || order?.orderNumber || order?.id,
               customerId: user?.id,
               driverId: order?.driverId || order?.captainId || null,
             })
