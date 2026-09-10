@@ -1,5 +1,5 @@
 // screens/HomeScreen.js
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,13 @@ import {
 import { COLORS, SIZES, FONT_SIZES } from '../constants/index';
 import OrdersScreen from './OrdersScreen';
 import TrackingScreen from './TrackingScreen';
+import ChatScreen from './ChatScreen';
+import { AuthContext } from '../contexts/AuthContext';
 
 const HomeScreen = ({ onLogout }) => {
   const [currentScreen, setCurrentScreen] = useState('home');
+  const { user } = useContext(AuthContext);
+  const [activeChatContext, setActiveChatContext] = useState(null);
 
   const handleLogout = () => {
     Alert.alert(
@@ -32,6 +36,26 @@ const HomeScreen = ({ onLogout }) => {
         },
       ]
     );
+  };
+
+  const openOrderChat = (order) => {
+    const orderId = order?.orderId || order?.orderNumber || order?.id;
+    const customerId = order?.customerId || user?.id;
+    const driverId = order?.driverId || order?.captainId;
+
+    if (!orderId || !customerId || !driverId) {
+      Alert.alert('الدردشة', 'تعذر فتح الدردشة: بيانات الطلب غير مكتملة');
+      return;
+    }
+
+    setActiveChatContext({
+      orderId,
+      customerId,
+      driverId,
+      title: `دردشة الطلب ${orderId}`,
+      sourceScreen: currentScreen,
+    });
+    setCurrentScreen('chat');
   };
 
   // إذا كان المستخدم يريد عرض صفحة الطلبات
@@ -63,7 +87,35 @@ const HomeScreen = ({ onLogout }) => {
             <Text style={styles.backButtonText}>‹ رجوع</Text>
           </TouchableOpacity>
         </View>
-        <TrackingScreen />
+        <TrackingScreen
+          onOpenChat={(order) =>
+            openOrderChat({
+              ...order,
+              orderId: order?.orderId || order?.orderNumber || order?.id,
+              customerId: user?.id,
+              driverId: order?.driverId || order?.captainId || null,
+            })
+          }
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (currentScreen === 'chat') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ChatScreen
+          onBack={() => {
+            const backScreen = activeChatContext?.sourceScreen || 'home';
+            setActiveChatContext(null);
+            setCurrentScreen(backScreen);
+          }}
+          orderId={activeChatContext?.orderId}
+          customerId={activeChatContext?.customerId}
+          driverId={activeChatContext?.driverId}
+          currentUserId={user?.id || activeChatContext?.customerId}
+          title={activeChatContext?.title}
+        />
       </SafeAreaView>
     );
   }
@@ -111,7 +163,12 @@ const HomeScreen = ({ onLogout }) => {
             icon="💬"
             title="الدردشة"
             subtitle="تواصل مع الكابتنز والمتاجر"
-            onPress={() => Alert.alert('قريباً', 'سيتم إضافة صفحة الدردشة')}
+            onPress={() =>
+              Alert.alert(
+                'الدردشة',
+                'افتح طلباً من صفحة التتبع ثم اضغط زر الدردشة مع السائق'
+              )
+            }
           />
 
           <MenuItemLarge

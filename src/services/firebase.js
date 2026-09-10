@@ -1,10 +1,12 @@
 // خدمة Firebase الرئيسية
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, get, set, update, remove, onValue } from 'firebase/database';
+import { getFirestore } from 'firebase/firestore';
 import { FIREBASE_CONFIG, FIREBASE_PATHS } from '../constants/firebase';
 
 let app = null;
 let database = null;
+let firestore = null;
 
 // تهيئة Firebase
 export const initializeFirebase = () => {
@@ -12,9 +14,10 @@ export const initializeFirebase = () => {
     if (!app) {
       app = initializeApp(FIREBASE_CONFIG);
       database = getDatabase(app);
+      firestore = getFirestore(app);
       console.log('✅ Firebase initialized successfully');
     }
-    return { app, database };
+    return { app, database, firestore };
   } catch (error) {
     console.error('❌ Firebase initialization error:', error);
     return null;
@@ -24,6 +27,10 @@ export const initializeFirebase = () => {
 // الحصول على instance Firebase
 export const getFirebaseApp = () => app;
 export const getFirebaseDatabase = () => database;
+export const getFirebaseFirestore = () => {
+  if (!firestore) initializeFirebase();
+  return firestore;
+};
 
 // ============= عمليات CRUD الأساسية =============
 

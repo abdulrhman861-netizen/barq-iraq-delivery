@@ -14,7 +14,7 @@ import { COLORS, SIZES, FONT_SIZES } from '../constants/index';
 
 const { width } = Dimensions.get('window');
 
-const TrackingScreen = () => {
+const TrackingScreen = ({ onOpenChat }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [driverLocation, setDriverLocation] = useState({ x: 30, y: 40 });
 
@@ -24,6 +24,7 @@ const TrackingScreen = () => {
       id: '1',
       orderNumber: '#ORD001',
       merchant: 'مطعم الأرز',
+      driverId: 'driver_ahmed_1',
       status: 'قيد التوصيل',
       progress: 60,
       pickupLocation: 'شارع الرشيد',
@@ -38,6 +39,7 @@ const TrackingScreen = () => {
       id: '2',
       orderNumber: '#ORD002',
       merchant: 'مخبزة الفرات',
+      driverId: 'driver_ali_1',
       status: 'تم التوصيل',
       progress: 100,
       pickupLocation: 'كركوك سنتر',
@@ -65,7 +67,11 @@ const TrackingScreen = () => {
     Alert.alert('اتصال', `سيتم الاتصال برقم ${phone}`);
   };
 
-  const handleChatDriver = () => {
+  const handleChatDriver = (order) => {
+    if (onOpenChat) {
+      onOpenChat(order);
+      return;
+    }
     Alert.alert('دردشة', 'فتح نافذة الدردشة مع السائق');
   };
 
@@ -177,7 +183,7 @@ const TrackingScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.iconButton}
-                onPress={handleChatDriver}
+                onPress={() => handleChatDriver(order)}
               >
                 <Text style={styles.iconButtonText}>💬</Text>
               </TouchableOpacity>

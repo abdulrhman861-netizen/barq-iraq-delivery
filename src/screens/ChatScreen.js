@@ -1,131 +1,207 @@
-// شاشة الدردشة الرئيسية
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  StyleSheet,
+  ActivityIndicator,
   FlatList,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { ChatContext } from '../../contexts/ChatContext';
-import { AuthContext } from '../../contexts/AuthContext';
-import ChatHeader from '../../components/ChatHeader';
-import ChatBubble from '../../components/ChatBubble';
-import MessageInput from '../../components/MessageInput';
-import TypingIndicator from '../../components/TypingIndicator';
-import { COLORS, SIZES } from '../../constants/index';
+import { COLORS, FONT_SIZES, SIZES } from '../constants';
+import {
+  getOrCreateOrderChat,
+  sendTextMessage,
+  streamChatMessages,
+} from '../services/chatService';
 
-const ChatScreen = ({ route, navigation }) => {
-  const { otherUserId, otherUserName, otherUserOnline } = route.params || {};
-  const { user } = useContext(AuthContext);
-  const {
-    messages,
-    isLoading,
-    sendNewMessage,
-    listenToMessages,
-    markAllAsRead,
-    typingUsers,
-    setTypingStatus,
-  } = useContext(ChatContext);
+const ChatScreen = ({
+  onBack,
+  orderId,
+  customerId,
+  driverId,
+  currentUserId,
+  title,
+}) => {
+  const [chatId, setChatId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const [sendError, setSendError] = useState(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const messagesListRef = useRef(null);
 
-  const [unsubscribe, setUnsubscribe] = useState(null);
-  const [isOtherUserOnline, setIsOtherUserOnline] = useState(otherUserOnline);
-
-  useEffect(() => {
-    if (user && otherUserId) {
-      // بدء الاستماع على الرسالل
-      const unsubscribeFn = listenToMessages(user.id, otherUserId);
-      setUnsubscribe(unsubscribeFn);
-
-      // تحديث علامة رسالل مقروءة
-      markAllAsRead(`${[user.id, otherUserId].sort().join('_')}`);
-
-      return () => {
-        if (unsubscribeFn) unsubscribeFn();
-      };
-    }
-  }, [user, otherUserId, listenToMessages, markAllAsRead]);
-
-  const handleSendMessage = async (text) => {
-    if (!user || !otherUserId) return;
-
-    try {
-      // إيقاف مؤشر الكتابة
-      setTypingStatus(user.id, user.name, false);
-
-      await sendNewMessage(user.id, otherUserId, {
-        text,
-        senderName: user.name,
-        type: 'text',
-      });
-    } catch (error) {
-      console.error('❌ Error sending message:', error);
-    }
-  };
-
-  const handleTyping = (isTyping) => {
-    if (user) {
-      setTypingStatus(user.id, user.name, isTyping);
-    }
-  };
-
-  const handleDeleteMessage = (messageId) => {
-    // يمكن تطبيق حذف الرسالة لاحقاً
-    console.log('Delete message:', messageId);
-  };
-
-  const renderMessage = ({ item }) => (
-    <ChatBubble
-      message={item}
-      isOwnMessage={item.senderId === user?.id}
-      onLongPress={handleDeleteMessage}
-    />
+  const activeUserId = useMemo(
+    () => currentUserId || customerId,
+    [currentUserId, customerId]
   );
 
-  if (!user) {
+  useEffect(() => {
+    let isMounted = true;
+    let unsubscribe;
+
+    const initializeChat = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+      setMessages([]);
+      try {
+        const chat = await getOrCreateOrderChat({ orderId, customerId, driverId });
+        if (!isMounted) return;
+
+        setChatId(chat.id);
+        unsubscribe = streamChatMessages(
+          chat.id,
+          (nextMessages) => {
+            if (!isMounted) return;
+            setMessages(nextMessages);
+            setIsLoading(false);
+          },
+          () => {
+            if (!isMounted) return;
+            setLoadError('تعذر تحميل الرسائل، حاول مرة أخرى');
+            setMessages([]);
+            setIsLoading(false);
+          }
+        );
+      } catch (e) {
+        if (!isMounted) return;
+        setLoadError('تعذر تهيئة المحادثة');
+        setMessages([]);
+        setIsLoading(false);
+      }
+    };
+
+    initializeChat();
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [orderId, customerId, driverId, retryKey]);
+
+  const handleSend = async () => {
+    const text = inputValue.trim();
+    if (!text || !activeUserId || !chatId || isSending) return;
+
+    setIsSending(true);
+    try {
+      await sendTextMessage({ chatId, senderId: activeUserId, text });
+      setInputValue('');
+      setSendError(null);
+    } catch (e) {
+      setSendError('فشل إرسال الرسالة، حاول مرة أخرى');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const formatTime = (createdAt) => {
+    if (!createdAt) return '';
+    const date = typeof createdAt.toDate === 'function' ? createdAt.toDate() : new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const renderItem = ({ item }) => {
+    const isOwn = item.senderId === activeUserId;
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </SafeAreaView>
+      <View style={[styles.messageRow, isOwn ? styles.ownRow : styles.otherRow]}>
+        <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
+          <Text style={[styles.messageText, isOwn && styles.ownMessageText]}>{item.text}</Text>
+          <Text style={styles.timeText}>{formatTime(item.createdAt)}</Text>
+        </View>
+      </View>
     );
-  }
+  };
+
+  const headerTitle = title || (orderId ? `دردشة الطلب ${orderId}` : 'الدردشة');
+  const scrollToLatestMessage = () => {
+    if (messagesListRef.current) {
+      messagesListRef.current.scrollToEnd({ animated: true });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ChatHeader
-        contactName={otherUserName || 'مستخدم'}
-        isOnline={isOtherUserOnline}
-        lastSeen={new Date().toISOString()}
-        onBackPress={() => navigation.goBack()}
-      />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          <Text style={styles.backButtonText}>‹ رجوع</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
+      </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
-          inverted
-          scrollEnabled={true}
-          contentContainerStyle={styles.listContent}
-          ListFooterComponent={<TypingIndicator typingUsers={typingUsers} />}
-          ListEmptyComponent={
-            isLoading ? (
-              <ActivityIndicator size="large" color={COLORS.primary} />
-            ) : null
-          }
-        />
-
-        <MessageInput
-          onSendMessage={handleSendMessage}
-          onTyping={handleTyping}
-          isLoading={isLoading}
-        />
-      </KeyboardAvoidingView>
+      {isLoading ? (
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : loadError ? (
+        <View style={styles.centerState}>
+          <Text style={styles.stateText}>{loadError}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => setRetryKey((prev) => prev + 1)}
+            accessibilityRole="button"
+            accessibilityLabel="إعادة تحميل المحادثة"
+            accessibilityHint="يعيد محاولة تحميل رسائل المحادثة"
+          >
+            <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <KeyboardAvoidingView
+          style={styles.chatArea}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <FlatList
+            ref={messagesListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            accessibilityLabel="قائمة الرسائل"
+            accessibilityHint="يتم تحديث الرسائل تلقائياً عند وصول رسائل جديدة"
+            accessibilityLiveRegion="polite"
+            onContentSizeChange={scrollToLatestMessage}
+            onLayout={scrollToLatestMessage}
+            ListEmptyComponent={
+              <View style={styles.centerState}>
+                <Text style={styles.stateText}>لا توجد رسائل بعد</Text>
+              </View>
+            }
+          />
+          {!!sendError && <Text style={styles.sendErrorText}>{sendError}</Text>}
+          <View style={styles.inputRow}>
+            <TextInput
+              value={inputValue}
+              onChangeText={setInputValue}
+              style={styles.input}
+              placeholder="اكتب رسالة..."
+              placeholderTextColor={COLORS.border}
+              multiline
+              textAlign="right"
+              accessibilityLabel="حقل كتابة الرسالة"
+              accessibilityHint="اكتب رسالتك ثم اضغط زر إرسال"
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!inputValue.trim() || isSending) && styles.sendButtonDisabled,
+              ]}
+              disabled={!inputValue.trim() || isSending}
+              onPress={handleSend}
+              accessibilityRole="button"
+              accessibilityLabel="إرسال الرسالة"
+              accessibilityHint="يرسل النص المكتوب في حقل الرسالة"
+            >
+              <Text style={styles.sendButtonText}>{isSending ? '...' : 'إرسال'}</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 };
@@ -135,16 +211,137 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.white,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  keyboardView: {
+  backButton: {
+    paddingVertical: SIZES.xs,
+    paddingHorizontal: SIZES.sm,
+  },
+  backButtonText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.base,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'right',
+    color: COLORS.white,
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+  },
+  chatArea: {
     flex: 1,
   },
   listContent: {
-    paddingVertical: SIZES.md,
+    padding: SIZES.md,
+    flexGrow: 1,
+  },
+  messageRow: {
+    marginBottom: SIZES.sm,
+  },
+  ownRow: {
+    alignItems: 'flex-end',
+  },
+  otherRow: {
+    alignItems: 'flex-start',
+  },
+  bubble: {
+    maxWidth: '80%',
+    borderRadius: 12,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+  },
+  ownBubble: {
+    backgroundColor: COLORS.primary,
+  },
+  otherBubble: {
+    backgroundColor: COLORS.gray,
+  },
+  messageText: {
+    color: COLORS.darkGray,
+    fontSize: FONT_SIZES.base,
+  },
+  ownMessageText: {
+    color: COLORS.white,
+  },
+  timeText: {
+    marginTop: SIZES.xs,
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.border,
+    textAlign: 'right',
+  },
+  inputRow: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+    padding: SIZES.md,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: SIZES.sm,
+  },
+  input: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 100,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+    color: COLORS.darkGray,
+    fontSize: FONT_SIZES.base,
+  },
+  sendButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    minWidth: 70,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SIZES.md,
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  sendButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    fontSize: FONT_SIZES.base,
+  },
+  centerState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SIZES.md,
+  },
+  stateText: {
+    color: COLORS.darkGray,
+    fontSize: FONT_SIZES.base,
+    textAlign: 'center',
+    marginBottom: SIZES.sm,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.base,
+    fontWeight: '600',
+  },
+  sendErrorText: {
+    color: COLORS.danger,
+    fontSize: FONT_SIZES.sm,
+    textAlign: 'right',
+    paddingHorizontal: SIZES.md,
+    paddingBottom: SIZES.xs,
   },
 });
 
