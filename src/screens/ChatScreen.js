@@ -152,6 +152,9 @@ const ChatScreen = ({
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
+            accessibilityLabel="قائمة الرسائل"
+            accessibilityHint="يتم تحديث الرسائل تلقائياً عند وصول رسائل جديدة"
+            accessibilityLiveRegion="polite"
             ListEmptyComponent={
               <View style={styles.centerState}>
                 <Text style={styles.stateText}>لا توجد رسائل بعد</Text>
@@ -168,6 +171,8 @@ const ChatScreen = ({
               placeholderTextColor={COLORS.border}
               multiline
               textAlign="right"
+              accessibilityLabel="حقل كتابة الرسالة"
+              accessibilityHint="اكتب رسالتك ثم اضغط زر إرسال"
             />
             <TouchableOpacity
               style={[
@@ -176,6 +181,9 @@ const ChatScreen = ({
               ]}
               disabled={!inputValue.trim() || isSending}
               onPress={handleSend}
+              accessibilityRole="button"
+              accessibilityLabel="إرسال الرسالة"
+              accessibilityHint="يرسل النص المكتوب في حقل الرسالة"
             >
               <Text style={styles.sendButtonText}>{isSending ? '...' : 'إرسال'}</Text>
             </TouchableOpacity>

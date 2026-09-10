@@ -40,7 +40,7 @@ const HomeScreen = ({ onLogout }) => {
 
   const openOrderChat = (order) => {
     const orderId = order?.id || order?.orderNumber;
-    const customerId = order?.customerId || order?.merchantId || user?.id;
+    const customerId = order?.customerId || user?.id;
     const driverId = order?.driverId || order?.captainId;
 
     if (!orderId || !customerId || !driverId) {
