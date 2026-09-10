@@ -53,6 +53,7 @@ const HomeScreen = ({ onLogout }) => {
       customerId,
       driverId,
       title: `دردشة الطلب ${orderId}`,
+      sourceScreen: currentScreen,
     });
     setCurrentScreen('chat');
   };
@@ -92,7 +93,7 @@ const HomeScreen = ({ onLogout }) => {
               ...order,
               id: order?.id || order?.orderNumber,
               customerId: user?.id,
-              driverId: order?.driverId || order?.captainId || order?.driverPhone || null,
+              driverId: order?.driverId || order?.captainId || null,
             })
           }
         />
@@ -104,7 +105,7 @@ const HomeScreen = ({ onLogout }) => {
     return (
       <SafeAreaView style={styles.container}>
         <ChatScreen
-          onBack={() => setCurrentScreen('home')}
+          onBack={() => setCurrentScreen(activeChatContext?.sourceScreen || 'home')}
           orderId={activeChatContext?.orderId}
           customerId={activeChatContext?.customerId}
           driverId={activeChatContext?.driverId}
