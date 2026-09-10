@@ -41,7 +41,7 @@ export const getOrCreateOrderChat = async ({ orderId, customerId, driverId }) =>
     customerId,
     driverId,
     lastMessage: '',
-    lastMessageAt: serverTimestamp(),
+    lastMessageAt: null,
   });
 
   return {

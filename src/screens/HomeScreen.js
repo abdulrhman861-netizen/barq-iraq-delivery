@@ -18,6 +18,7 @@ import { AuthContext } from '../contexts/AuthContext';
 const HomeScreen = ({ onLogout }) => {
   const [currentScreen, setCurrentScreen] = useState('home');
   const { user } = useContext(AuthContext);
+  const [activeChatContext, setActiveChatContext] = useState(null);
 
   const handleLogout = () => {
     Alert.alert(
@@ -35,6 +36,25 @@ const HomeScreen = ({ onLogout }) => {
         },
       ]
     );
+  };
+
+  const openOrderChat = (order) => {
+    const orderId = order?.id || order?.orderNumber;
+    const customerId = order?.customerId || order?.merchantId || user?.id;
+    const driverId = order?.driverId || order?.captainId;
+
+    if (!orderId || !customerId || !driverId) {
+      Alert.alert('الدردشة', 'تعذر فتح الدردشة: بيانات الطلب غير مكتملة');
+      return;
+    }
+
+    setActiveChatContext({
+      orderId,
+      customerId,
+      driverId,
+      title: `دردشة الطلب ${orderId}`,
+    });
+    setCurrentScreen('chat');
   };
 
   // إذا كان المستخدم يريد عرض صفحة الطلبات
@@ -66,7 +86,16 @@ const HomeScreen = ({ onLogout }) => {
             <Text style={styles.backButtonText}>‹ رجوع</Text>
           </TouchableOpacity>
         </View>
-        <TrackingScreen />
+        <TrackingScreen
+          onOpenChat={(order) =>
+            openOrderChat({
+              ...order,
+              id: order?.id || order?.orderNumber,
+              customerId: user?.id || 'customer_demo_1',
+              driverId: order?.driverId || order?.captainId || order?.driverPhone || null,
+            })
+          }
+        />
       </SafeAreaView>
     );
   }
@@ -76,11 +105,11 @@ const HomeScreen = ({ onLogout }) => {
       <SafeAreaView style={styles.container}>
         <ChatScreen
           onBack={() => setCurrentScreen('home')}
-          orderId="ORD001"
-          customerId={user?.id || 'customer_demo_1'}
-          driverId="driver_demo_1"
-          currentUserId={user?.id || 'customer_demo_1'}
-          title="دردشة الطلب ORD001"
+          orderId={activeChatContext?.orderId}
+          customerId={activeChatContext?.customerId}
+          driverId={activeChatContext?.driverId}
+          currentUserId={user?.id || activeChatContext?.customerId}
+          title={activeChatContext?.title}
         />
       </SafeAreaView>
     );
@@ -129,7 +158,12 @@ const HomeScreen = ({ onLogout }) => {
             icon="💬"
             title="الدردشة"
             subtitle="تواصل مع الكابتنز والمتاجر"
-            onPress={() => setCurrentScreen('chat')}
+            onPress={() =>
+              Alert.alert(
+                'الدردشة',
+                'افتح طلباً من صفحة التتبع ثم اضغط زر الدردشة مع السائق'
+              )
+            }
           />
 
           <MenuItemLarge

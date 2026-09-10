@@ -31,7 +31,8 @@ const ChatScreen = ({
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+  const [sendError, setSendError] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
 
   const activeUserId = useMemo(
@@ -45,7 +46,7 @@ const ChatScreen = ({
 
     const initializeChat = async () => {
       setIsLoading(true);
-      setError(null);
+      setLoadError(null);
       try {
         const chat = await getOrCreateOrderChat({ orderId, customerId, driverId });
         if (!isMounted) return;
@@ -60,13 +61,13 @@ const ChatScreen = ({
           },
           () => {
             if (!isMounted) return;
-            setError('تعذر تحميل الرسائل، حاول مرة أخرى');
+            setLoadError('تعذر تحميل الرسائل، حاول مرة أخرى');
             setIsLoading(false);
           }
         );
       } catch (e) {
         if (!isMounted) return;
-        setError('تعذر تهيئة المحادثة');
+        setLoadError('تعذر تهيئة المحادثة');
         setIsLoading(false);
       }
     };
@@ -86,9 +87,9 @@ const ChatScreen = ({
     try {
       await sendTextMessage({ chatId, senderId: activeUserId, text });
       setInputValue('');
-      setError(null);
+      setSendError(null);
     } catch (e) {
-      setError('فشل إرسال الرسالة');
+      setSendError('فشل إرسال الرسالة، حاول مرة أخرى');
     } finally {
       setIsSending(false);
     }
@@ -128,9 +129,9 @@ const ChatScreen = ({
         <View style={styles.centerState}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
-      ) : error ? (
+      ) : loadError ? (
         <View style={styles.centerState}>
-          <Text style={styles.stateText}>{error}</Text>
+          <Text style={styles.stateText}>{loadError}</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => setRetryKey((prev) => prev + 1)}
@@ -154,6 +155,7 @@ const ChatScreen = ({
               </View>
             }
           />
+          {!!sendError && <Text style={styles.sendErrorText}>{sendError}</Text>}
           <View style={styles.inputRow}>
             <TextInput
               value={inputValue}
@@ -310,6 +312,13 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: FONT_SIZES.base,
     fontWeight: '600',
+  },
+  sendErrorText: {
+    color: COLORS.danger,
+    fontSize: FONT_SIZES.sm,
+    textAlign: 'right',
+    paddingHorizontal: SIZES.md,
+    paddingBottom: SIZES.xs,
   },
 });
 
