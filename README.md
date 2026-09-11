@@ -88,6 +88,42 @@ npm run android
 npm run ios
 ```
 
+### تجربة النسخة الشاملة على الويب
+
+1. ثبّت الاعتمادات:
+   - `npm install`
+2. شغّل الويب:
+   - `npm run web`
+3. من شاشة الدخول التجريبية:
+   - أدخل `uid` واسم المستخدم
+   - اختر الدور: `captain` أو `merchant` أو `employee` أو `admin`
+   - اضغط **بدء التجربة**
+4. من Dashboard الموحد جرّب جميع الأزرار:
+   - Chat
+   - Create Order
+   - Ratings
+   - Notifications
+   - Wallet / Finance
+
+### إعداد Firebase Web (Firestore)
+
+إذا أضفت قيم Firebase الحقيقية في متغيرات البيئة (`EXPO_PUBLIC_FIREBASE_*` أو `FIREBASE_*`) سيعمل التطبيق على Firestore الحقيقي.
+
+الحقول المستخدمة:
+
+- `chats/{chatId}`: `orderId`, `customerId`, `driverId`, `lastMessage`, `lastMessageAt`
+- `chats/{chatId}/messages/{messageId}`: `senderId`, `text`, `createdAt`, `type`
+- `ratings/{ratingId}`: `orderId`, `fromUserId`, `toUserId`, `role`, `score`, `comment`, `createdAt`
+- `orders/{orderId}`: `customerId`, `merchantId`, `status`, `pickup`, `dropoff`, `notes`, `createdAt`
+- `notifications/{notificationId}`: `userId`, `title`, `body`, `type`, `isRead`, `createdAt`
+- `users/{uid}`: `displayName`, `role`, `walletId`
+- `wallets/{walletId}`: `ownerUserId`, `ownerRole`, `currency`, `balance`, `updatedAt`
+- `wallets/{walletId}/transactions/{txId}`: `type`, `amount`, `description`, `relatedOrderId`, `createdAt`, `createdBy`
+
+### وضع Fallback التجريبي
+
+إذا لم تتوفر مفاتيح Firebase، التطبيق لا ينهار. بدل ذلك يعمل بوضع تجريبي تلقائي مع بيانات Demo جاهزة للتجربة على الويب.
+
 ---
 
 ## 👥 الأدوار (User Roles)
