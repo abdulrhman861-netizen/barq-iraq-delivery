@@ -1,57 +1,25 @@
-// App.js - الملف الرئيسي
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
-
-// Contexts
-import { AuthProvider } from './src/contexts/AuthContext';
-import { OrderProvider } from './src/contexts/OrderContext';
-import { TrackingProvider } from './src/contexts/TrackingContext';
-import { RatingProvider } from './src/contexts/RatingContext';
-import { ChatProvider } from './src/contexts/ChatContext';
-import { NotificationProvider } from './src/contexts/NotificationContext';
-
-// Screens
+import { SafeAreaView, StyleSheet } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
-import HomeScreen from './src/screens/HomeScreen';
-
-// Services
-import { initializeFirebase } from './src/services/firebase';
+import WebDemoDashboardScreen from './src/screens/webDemo/WebDemoDashboardScreen';
 import { initializeNotifications } from './src/services/notifications';
-import { COLORS } from './src/constants/index';
+import { COLORS } from './src/constants';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // تهيئة Firebase
-    initializeFirebase();
-    
-    // تهيئة الإشعارات
     initializeNotifications();
-    
-    console.log('✅ App initialized successfully');
   }, []);
 
   return (
-    <AuthProvider>
-      <OrderProvider>
-        <TrackingProvider>
-          <RatingProvider>
-            <ChatProvider>
-              <NotificationProvider>
-                <SafeAreaView style={styles.container}>
-                  {isLoggedIn ? (
-                    <HomeScreen onLogout={() => setIsLoggedIn(false)} />
-                  ) : (
-                    <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
-                  )}
-                </SafeAreaView>
-              </NotificationProvider>
-            </ChatProvider>
-          </RatingProvider>
-        </TrackingProvider>
-      </OrderProvider>
-    </AuthProvider>
+    <SafeAreaView style={styles.container}>
+      {isLoggedIn ? (
+        <WebDemoDashboardScreen onLogout={() => setIsLoggedIn(false)} />
+      ) : (
+        <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
+      )}
+    </SafeAreaView>
   );
 };
 

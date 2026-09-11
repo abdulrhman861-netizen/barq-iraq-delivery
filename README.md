@@ -88,6 +88,18 @@ npm run android
 npm run ios
 ```
 
+### تجربة Web Dashboard (Firestore)
+
+بعد تسجيل الدخول، ستظهر لوحة تجربة موحدة على الويب تشمل:
+- Chat
+- Ratings
+- Create Order
+- Notifications
+- Role switch (captain / merchant / employee / admin)
+- Finance & Wallets
+
+إذا بقيت قيم Firebase افتراضية في `.env` سيعمل التطبيق بوضع واجهة تجريبية فقط، وستظهر رسالة إعداد واضحة داخل الـ Dashboard.
+
 ---
 
 ## 👥 الأدوار (User Roles)
@@ -121,6 +133,63 @@ npm run ios
 
 ```json
 {
+  "chats": {
+    "chatId": {
+      "orderId": "order_1",
+      "customerId": "user_1",
+      "driverId": "user_2",
+      "lastMessage": "مرحبا",
+      "lastMessageAt": "timestamp",
+      "messages": {
+        "messageId": {
+          "senderId": "user_1",
+          "text": "مرحبا",
+          "createdAt": "timestamp",
+          "type": "text"
+        }
+      }
+    }
+  },
+  "ratings": {
+    "ratingId": {
+      "orderId": "order_1",
+      "fromUserId": "user_1",
+      "toUserId": "user_2",
+      "role": "merchant",
+      "score": 5,
+      "comment": "سريع",
+      "createdAt": "timestamp"
+    }
+  },
+  "notifications": {
+    "notificationId": {
+      "userId": "user_1",
+      "title": "عنوان",
+      "body": "محتوى",
+      "type": "system",
+      "isRead": false,
+      "createdAt": "timestamp"
+    }
+  },
+  "wallets": {
+    "walletId": {
+      "ownerUserId": "user_1",
+      "ownerRole": "merchant",
+      "currency": "IQD",
+      "balance": 0,
+      "updatedAt": "timestamp",
+      "transactions": {
+        "txId": {
+          "type": "credit|debit",
+          "amount": 1000,
+          "description": "manual",
+          "relatedOrderId": "order_1",
+          "createdAt": "timestamp",
+          "createdBy": "admin_1"
+        }
+      }
+    }
+  },
   "users": {
     "user_id": {
       "name": "اسم المستخدم",
