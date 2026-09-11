@@ -122,7 +122,9 @@ const buildChatId = ({ orderId, customerId, driverId }) =>
 export const firebaseMode = canUseFirebase ? 'firebase' : 'demo';
 
 export const upsertUserProfile = async ({ uid, displayName, role }) => {
-  const payload = { displayName, role, walletId: null, updatedAt: nowIso() };
+  const payload = { updatedAt: nowIso() };
+  if (displayName) payload.displayName = displayName;
+  if (role) payload.role = role;
 
   if (!canUseFirebase) {
     demoDb.users[uid] = { ...(demoDb.users[uid] || {}), ...payload };
