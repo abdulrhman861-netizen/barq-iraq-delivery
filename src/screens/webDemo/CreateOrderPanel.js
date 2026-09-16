@@ -83,7 +83,6 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
 
   const [feedbackError, setFeedbackError] = useState('');
   const [feedbackSuccess, setFeedbackSuccess] = useState('');
-  const [refreshTick, setRefreshTick] = useState(0);
 
   const isCaptain = currentUser?.role === 'captain';
   const currentUserId = currentUser?.uid || '';
@@ -118,7 +117,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
         setLoadingOrders(false);
       }
     );
-  }, [currentUserId, refreshTick, setupState.isConfigured]);
+  }, [currentUserId, setupState.isConfigured]);
 
   useEffect(() => {
     if (!setupState.isConfigured || !isCaptain) {
@@ -138,7 +137,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
         setLoadingPending(false);
       }
     );
-  }, [isCaptain, refreshTick, setupState.isConfigured]);
+  }, [isCaptain, setupState.isConfigured]);
 
   const assignedCaptainOrders = useMemo(
     () =>
@@ -227,6 +226,15 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
     }
   };
 
+  const handleManualRefresh = async () => {
+    if (lookupOrderId.trim()) {
+      await handleLookupOrder();
+      return;
+    }
+    setFeedbackSuccess('القوائم محدثة لحظيًا عبر Firebase.');
+    setFeedbackError('');
+  };
+
   const getVisibleActions = (order) => {
     const allowed = getAllowedNextStatuses(order.status);
     const isAdmin = currentUser?.role === 'admin';
@@ -307,7 +315,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
     <View style={styles.wrapper}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>الطلبات والتوصيل ({toRoleLabel(currentUser?.role)})</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={() => setRefreshTick((value) => value + 1)}>
+        <TouchableOpacity style={styles.refreshButton} onPress={handleManualRefresh}>
           <Text style={styles.refreshText}>تحديث</Text>
         </TouchableOpacity>
       </View>
@@ -467,7 +475,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
       {loadingOrders ? (
         <ActivityIndicator color={COLORS.primary} />
       ) : orders.length === 0 ? (
-        <Text style={styles.empty}>لا يوجد طلبات حتى الآن.</Text>
+        <Text style={styles.empty}>لا توجد طلبات حتى الآن.</Text>
       ) : (
         <FlatList
           data={orders}

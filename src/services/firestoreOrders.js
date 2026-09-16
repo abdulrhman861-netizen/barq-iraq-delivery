@@ -318,20 +318,20 @@ export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' 
     participantIds.add(actorId);
 
     const isAdmin = actor?.role === 'admin';
+    const isCaptain = actor?.role === 'captain';
     const isParticipant =
-      isAdmin ||
       participantIds.has(actorId) ||
       order.createdBy === actorId ||
       order.customerId === actorId ||
       order.merchantId === actorId ||
       order.assignedCaptainId === actorId;
 
-    if (!isParticipant) {
+    if (!isParticipant && !isAdmin) {
       throw new Error('ليس لديك صلاحية تعديل هذا الطلب.');
     }
 
     if (cleanStatus === ORDER_STATUSES.ACCEPTED) {
-      if (actor?.role !== 'captain' && !isAdmin) {
+      if (!isCaptain && !isAdmin) {
         throw new Error('قبول الطلب متاح للكابتن فقط.');
       }
 
@@ -344,6 +344,31 @@ export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' 
       if (!isAdmin && order.assignedCaptainId !== actorId) {
         throw new Error('تحديث هذه الحالة متاح للكابتن المعيّن فقط.');
       }
+    }
+
+    if (cleanStatus === ORDER_STATUSES.CANCELLED) {
+      const canCancel =
+        isAdmin ||
+        order.createdBy === actorId ||
+        order.merchantId === actorId ||
+        order.assignedCaptainId === actorId;
+
+      if (!canCancel) {
+        throw new Error('إلغاء الطلب متاح لمنشئ الطلب أو التاجر أو الكابتن المعيّن أو الإدارة فقط.');
+      }
+    }
+
+    if (
+      !isAdmin &&
+      ![
+        ORDER_STATUSES.ACCEPTED,
+        ORDER_STATUSES.PICKED_UP,
+        ORDER_STATUSES.IN_TRANSIT,
+        ORDER_STATUSES.DELIVERED,
+        ORDER_STATUSES.CANCELLED,
+      ].includes(cleanStatus)
+    ) {
+      throw new Error('لا تملك صلاحية تحديث هذه الحالة.');
     }
 
     const nowIso = new Date().toISOString();
