@@ -130,12 +130,6 @@ export const loginWithEmail = async ({ email, password }) => {
 
   try {
     const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-    await upsertAuthUserProfile({
-      uid: credential.user.uid,
-      email: credential.user.email,
-      displayName: credential.user.displayName || '',
-      phone: credential.user.phoneNumber || undefined,
-    });
     return credential.user;
   } catch (error) {
     error.arabicMessage = mapAuthErrorToArabic(error);

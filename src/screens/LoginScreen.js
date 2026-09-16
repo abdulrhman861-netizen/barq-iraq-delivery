@@ -283,13 +283,15 @@ const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
           </TouchableOpacity>
 
           {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotPasswordContainer}
-            onPress={handleForgotPassword}
-            disabled={isLoading}
-          >
-            <Text style={styles.forgotPasswordText}>هل نسيت كلمة المرور؟</Text>
-          </TouchableOpacity>
+          {!isRegisterMode && (
+            <TouchableOpacity
+              style={styles.forgotPasswordContainer}
+              onPress={handleForgotPassword}
+              disabled={isLoading}
+            >
+              <Text style={styles.forgotPasswordText}>هل نسيت كلمة المرور؟</Text>
+            </TouchableOpacity>
+          )}
 
           {!isConfigured && (
             <TouchableOpacity
