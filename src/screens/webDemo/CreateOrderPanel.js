@@ -229,6 +229,9 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
 
   const getVisibleActions = (order) => {
     const allowed = getAllowedNextStatuses(order.status);
+    const isAdmin = currentUser?.role === 'admin';
+
+    if (isAdmin) return allowed;
 
     if (isCaptain && order.assignedCaptainId === currentUserId) {
       return allowed.filter((status) => status !== ORDER_STATUSES.ACCEPTED);
@@ -401,7 +404,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
             style={[styles.input, styles.lookupInput]}
             value={lookupOrderId}
             onChangeText={setLookupOrderId}
-            placeholder="order id"
+            placeholder="معرّف الطلب"
             placeholderTextColor={COLORS.border}
             textAlign="right"
           />

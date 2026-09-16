@@ -144,7 +144,7 @@ export const getArabicOrderStatus = (status) => ORDER_STATUS_LABELS_AR[status] |
 export const getAllowedNextStatuses = (status) => VALID_STATUS_TRANSITIONS[status] || [];
 
 export const isValidStatusTransition = (fromStatus, toStatus) => {
-  if (fromStatus === toStatus) return true;
+  if (fromStatus === toStatus) return false;
   const allowed = getAllowedNextStatuses(fromStatus);
   return allowed.includes(toStatus);
 };
