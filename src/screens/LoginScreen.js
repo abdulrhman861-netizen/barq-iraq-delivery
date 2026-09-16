@@ -130,6 +130,7 @@ const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
     setIsRegisterMode((prev) => !prev);
     setFeedback({ type: null, message: '' });
     setFullName('');
+    setEmail('');
     setPhone('');
     setPassword('');
     setConfirmPassword('');
@@ -271,9 +272,9 @@ const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
 
           {/* Login Button */}
           <TouchableOpacity
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+            style={[styles.loginButton, (isLoading || !isConfigured) && styles.loginButtonDisabled]}
             onPress={isRegisterMode ? handleRegister : handleLogin}
-            disabled={isLoading}
+            disabled={isLoading || !isConfigured}
           >
             {isLoading ? (
               <ActivityIndicator color={COLORS.white} size="large" />

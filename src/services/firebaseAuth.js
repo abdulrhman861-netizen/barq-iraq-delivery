@@ -106,14 +106,18 @@ export const registerWithEmail = async ({ email, password, displayName, phone })
       await updateProfile(credential.user, { displayName: displayName.trim() });
     }
 
-    await upsertAuthUserProfile({
-      uid: credential.user.uid,
-      email: credential.user.email,
-      displayName: displayName?.trim() || credential.user.displayName || '',
-      phone: phone?.trim() || '',
-      includeCreatedAt: true,
-      defaultRole: 'merchant',
-    });
+    try {
+      await upsertAuthUserProfile({
+        uid: credential.user.uid,
+        email: credential.user.email,
+        displayName: displayName?.trim() || credential.user.displayName || '',
+        phone: phone?.trim() || '',
+        includeCreatedAt: true,
+        defaultRole: 'merchant',
+      });
+    } catch (profileError) {
+      console.warn('⚠️ Failed to create Firestore profile for new user:', profileError);
+    }
 
     return credential.user;
   } catch (error) {

@@ -12,12 +12,14 @@ const App = () => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [setupState] = useState(getFirebaseSetupState());
-  const dashboardUser = isDemoMode ? null : authUser;
+  const isUsingDemoMode = isDemoMode && !authUser;
+  const dashboardUser = authUser || null;
 
   useEffect(() => {
     initializeNotifications();
     const unsubscribe = subscribeToAuthState((user) => {
       setAuthUser(user);
+      if (user) setIsDemoMode(false);
       setIsAuthLoading(false);
     });
 
@@ -31,11 +33,11 @@ const App = () => {
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>جاري التحقق من حالة تسجيل الدخول...</Text>
         </View>
-      ) : isDemoMode || authUser ? (
+      ) : isUsingDemoMode || authUser ? (
         <WebDemoDashboardScreen
           currentUser={dashboardUser}
           onLogout={async () => {
-            if (isDemoMode) {
+            if (isUsingDemoMode) {
               setIsDemoMode(false);
               return;
             }
