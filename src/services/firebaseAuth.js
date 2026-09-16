@@ -61,9 +61,12 @@ const upsertAuthUserProfile = async ({
   const payload = {
     email: email || '',
     displayName: displayName || '',
-    phone: phone || '',
     updatedAt: serverTimestamp(),
   };
+
+  if (phone?.trim()) {
+    payload.phone = phone.trim();
+  }
 
   if (defaultRole) {
     payload.role = defaultRole;
@@ -131,7 +134,7 @@ export const loginWithEmail = async ({ email, password }) => {
       uid: credential.user.uid,
       email: credential.user.email,
       displayName: credential.user.displayName || '',
-      phone: credential.user.phoneNumber || '',
+      phone: credential.user.phoneNumber || undefined,
     });
     return credential.user;
   } catch (error) {

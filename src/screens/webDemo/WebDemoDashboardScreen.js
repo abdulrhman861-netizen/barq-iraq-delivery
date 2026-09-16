@@ -48,6 +48,7 @@ const WebDemoDashboardScreen = ({ currentUser, onLogout }) => {
 
   useEffect(() => {
     if (!setupState.isConfigured) return undefined;
+    setProfile(null);
 
     upsertUserRole({
       uid: effectiveUser.uid,

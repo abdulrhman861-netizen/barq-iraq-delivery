@@ -123,6 +123,14 @@ const LoginScreen = () => {
     }
   };
 
+  const handleToggleMode = () => {
+    setIsRegisterMode((prev) => !prev);
+    setFeedback({ type: null, message: '' });
+    setFullName('');
+    setPhone('');
+    setConfirmPassword('');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -286,10 +294,7 @@ const LoginScreen = () => {
             {isRegisterMode ? 'لديك حساب بالفعل؟ ' : 'ليس لديك حساب؟ '}
           </Text>
           <TouchableOpacity
-            onPress={() => {
-              setIsRegisterMode((prev) => !prev);
-              setFeedback({ type: null, message: '' });
-            }}
+            onPress={handleToggleMode}
             disabled={isLoading}
           >
             <Text style={styles.registerLink}>

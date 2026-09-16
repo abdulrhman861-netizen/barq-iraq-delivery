@@ -5,10 +5,12 @@ import WebDemoDashboardScreen from './src/screens/webDemo/WebDemoDashboardScreen
 import { initializeNotifications } from './src/services/notifications';
 import { COLORS } from './src/constants';
 import { signOutUser, subscribeToAuthState } from './src/services/firebaseAuth';
+import { getFirebaseSetupState } from './src/services/firebaseClient';
 
 const App = () => {
   const [authUser, setAuthUser] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [setupState] = useState(getFirebaseSetupState());
 
   useEffect(() => {
     initializeNotifications();
@@ -27,7 +29,7 @@ const App = () => {
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>جاري التحقق من حالة تسجيل الدخول...</Text>
         </View>
-      ) : authUser ? (
+      ) : authUser || !setupState.isConfigured ? (
         <WebDemoDashboardScreen currentUser={authUser} onLogout={signOutUser} />
       ) : (
         <LoginScreen />

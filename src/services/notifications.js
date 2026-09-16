@@ -1,5 +1,6 @@
 // خدمة الإشعارات
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 /**
@@ -44,6 +45,11 @@ export const getPushToken = async () => {
   try {
     if (Platform.OS === 'web') {
       console.warn('⚠️ Push notifications not supported on web');
+      return null;
+    }
+
+    if (!Constants.isDevice) {
+      console.warn('⚠️ Push notifications only work on physical devices');
       return null;
     }
 
