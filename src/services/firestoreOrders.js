@@ -348,7 +348,7 @@ export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' 
     }
 
     if (cleanStatus === ORDER_STATUSES.ACCEPTED) {
-      if (!isCaptain && !isAdmin) {
+      if (!isCaptain) {
         throw new Error('قبول الطلب متاح للكابتن فقط.');
       }
 
@@ -398,6 +398,8 @@ export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' 
         at: nowIso,
       },
     ];
+    const participantIds = new Set(storedParticipantIds);
+    participantIds.add(actorId);
 
     const updates = {
       status: cleanStatus,
@@ -413,5 +415,3 @@ export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' 
     transaction.update(orderRef, updates);
   });
 };
-    const participantIds = new Set(storedParticipantIds);
-    participantIds.add(actorId);

@@ -110,7 +110,7 @@ npm run ios
 - سجل الطلبات الخاص بالمستخدم الحالي (Realtime مباشر)
 - لوحة كابتن لعرض الطلبات المتاحة وقبولها
 - انتقالات الحالة المدعومة:
-  - `pending/new` → `accepted`
+  - `pending` → `accepted` (ومعالجة `new` القديمة بنفس منطق `pending` عند وجودها)
   - `accepted` → `picked_up`
   - `picked_up` → `in_transit`
   - `in_transit` → `delivered`

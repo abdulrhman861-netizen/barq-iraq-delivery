@@ -96,7 +96,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
     }
 
     if (currentUser?.role === 'merchant') {
-      setCustomerId(currentUserId);
+      setCustomerId('');
       setMerchantId(currentUserId);
       return;
     }
@@ -107,8 +107,8 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
       return;
     }
 
-    setCustomerId(currentUserId);
-    setMerchantId(currentUserId);
+    setCustomerId('');
+    setMerchantId('');
   }, [currentUser?.role, currentUserId]);
 
   useEffect(() => {
