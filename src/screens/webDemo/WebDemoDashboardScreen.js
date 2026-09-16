@@ -19,24 +19,37 @@ import CreateOrderPanel from './CreateOrderPanel';
 import NotificationsPanel from './NotificationsPanel';
 import FinancePanel from './FinancePanel';
 
-const ROLES = ['captain', 'merchant', 'employee', 'admin'];
+const ROLE_LABELS = {
+  captain: 'كابتن',
+  merchant: 'تاجر',
+  employee: 'موظف',
+  admin: 'مدير',
+};
+
+const ROLES = Object.keys(ROLE_LABELS);
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'chat', label: 'Chat' },
-  { id: 'ratings', label: 'Ratings' },
-  { id: 'orders', label: 'Create Order' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'finance', label: 'Finance & Wallets' },
+  { id: 'dashboard', label: 'الرئيسية' },
+  { id: 'chat', label: 'المحادثات' },
+  { id: 'ratings', label: 'التقييمات' },
+  { id: 'orders', label: 'الطلبات والتوصيل' },
+  { id: 'notifications', label: 'الإشعارات' },
+  { id: 'finance', label: 'المالية والمحافظ' },
 ];
 
-const WebDemoDashboardScreen = ({ onLogout }) => {
+const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [role, setRole] = useState('merchant');
+  const [role, setRole] = useState(currentUser?.role || 'merchant');
   const [profile, setProfile] = useState(null);
   const [setupState] = useState(getFirebaseSetupState());
 
-  const demoUser = useMemo(
+  useEffect(() => {
+    if (currentUser?.role && ROLES.includes(currentUser.role)) {
+      setRole(currentUser.role);
+    }
+  }, [currentUser?.role]);
+
+  const fallbackDemoUser = useMemo(
     () => ({
       uid: `demo-${role}-user`,
       displayName: `Demo ${role}`,
@@ -45,17 +58,27 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
     [role]
   );
 
+  const dashboardUser = useMemo(() => {
+    if (!currentUser?.uid) return fallbackDemoUser;
+
+    return {
+      uid: currentUser.uid,
+      displayName: currentUser.displayName || `مستخدم ${ROLE_LABELS[role] || role}`,
+      role,
+    };
+  }, [currentUser?.displayName, currentUser?.uid, fallbackDemoUser, role]);
+
   useEffect(() => {
-    if (!setupState.isConfigured) return undefined;
+    if (!setupState.isConfigured || !dashboardUser?.uid) return undefined;
 
     upsertUserRole({
-      uid: demoUser.uid,
-      displayName: demoUser.displayName,
+      uid: dashboardUser.uid,
+      displayName: dashboardUser.displayName,
       role,
     }).catch(() => {});
 
-    return subscribeUserProfile(demoUser.uid, setProfile, () => {});
-  }, [demoUser.displayName, demoUser.uid, role, setupState.isConfigured]);
+    return subscribeUserProfile(dashboardUser.uid, setProfile, () => {});
+  }, [dashboardUser.displayName, dashboardUser.uid, role, setupState.isConfigured]);
 
   const renderDashboardHome = () => (
     <View style={styles.dashboardGrid}>
@@ -66,14 +89,14 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
           onPress={() => setActiveTab(item.id)}
         >
           <Text style={styles.dashboardCardTitle}>{item.label}</Text>
-          <Text style={styles.dashboardCardHint}>Open</Text>
+          <Text style={styles.dashboardCardHint}>فتح</Text>
         </TouchableOpacity>
       ))}
     </View>
   );
 
   const renderTab = () => {
-    const sharedProps = { currentUser: demoUser, setupState };
+    const sharedProps = { currentUser: dashboardUser, setupState };
 
     switch (activeTab) {
       case 'chat':
@@ -95,21 +118,21 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Barq Web Demo</Text>
+          <Text style={styles.title}>برق العراق</Text>
           <Text style={styles.subtitle}>
-            User: {profile?.displayName || demoUser.displayName} ({role})
+            المستخدم: {profile?.displayName || dashboardUser.displayName} ({ROLE_LABELS[role] || role})
           </Text>
         </View>
         <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>تسجيل الخروج</Text>
         </TouchableOpacity>
       </View>
 
       {!setupState.isConfigured && (
         <View style={styles.warningBox}>
-          <Text style={styles.warningTitle}>Firebase Web setup required</Text>
+          <Text style={styles.warningTitle}>إعداد Firebase للويب مطلوب</Text>
           <Text style={styles.warningText}>
-            Fill FIREBASE_* values in .env. Keep placeholders only for UI preview mode.
+            أضف قيم FIREBASE_* الحقيقية داخل .env لتفعيل البيانات الفعلية.
           </Text>
         </View>
       )}
@@ -121,7 +144,9 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
             onPress={() => setRole(roleItem)}
             style={[styles.roleButton, roleItem === role && styles.roleButtonActive]}
           >
-            <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>{roleItem}</Text>
+            <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>
+              {ROLE_LABELS[roleItem]}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -146,17 +171,17 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.gray },
+  container: { flex: 1, backgroundColor: COLORS.gray, direction: 'rtl' },
   header: {
     backgroundColor: COLORS.primary,
     paddingHorizontal: SIZES.md,
     paddingVertical: SIZES.md,
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  title: { color: COLORS.white, fontSize: FONT_SIZES.xxl, fontWeight: '700' },
-  subtitle: { color: COLORS.white, fontSize: FONT_SIZES.sm, marginTop: SIZES.xs },
+  title: { color: COLORS.white, fontSize: FONT_SIZES.xxl, fontWeight: '700', textAlign: 'right' },
+  subtitle: { color: COLORS.white, fontSize: FONT_SIZES.sm, marginTop: SIZES.xs, textAlign: 'right' },
   logoutButton: { backgroundColor: COLORS.white, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: 8 },
   logoutText: { color: COLORS.primary, fontWeight: '700' },
   warningBox: {
@@ -167,21 +192,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F2C078',
   },
-  warningTitle: { color: '#9A5A00', fontWeight: '700', marginBottom: SIZES.xs },
-  warningText: { color: '#9A5A00', fontSize: FONT_SIZES.sm },
-  roleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm, paddingHorizontal: SIZES.md, marginBottom: SIZES.sm },
-  roleButton: { backgroundColor: COLORS.white, borderRadius: 8, paddingVertical: SIZES.sm, paddingHorizontal: SIZES.md, borderWidth: 1, borderColor: COLORS.border },
+  warningTitle: { color: '#9A5A00', fontWeight: '700', marginBottom: SIZES.xs, textAlign: 'right' },
+  warningText: { color: '#9A5A00', fontSize: FONT_SIZES.sm, textAlign: 'right' },
+  roleRow: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    marginBottom: SIZES.sm,
+  },
+  roleButton: {
+    backgroundColor: COLORS.white,
+    borderRadius: 8,
+    paddingVertical: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
   roleButtonActive: { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
   roleText: { color: COLORS.darkGray, fontWeight: '600' },
   roleTextActive: { color: COLORS.white },
-  navScroll: { maxHeight: 48, paddingLeft: SIZES.md },
-  navRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, paddingRight: SIZES.md },
+  navScroll: { maxHeight: 48, paddingRight: SIZES.md },
+  navRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: SIZES.sm, paddingLeft: SIZES.md },
   navButton: { backgroundColor: COLORS.white, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: 18 },
   navButtonActive: { backgroundColor: COLORS.primary },
   navText: { color: COLORS.darkGray, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   navTextActive: { color: COLORS.white },
-  content: { flex: 1, padding: SIZES.md },
-  dashboardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.md },
+  content: { flex: 1, padding: SIZES.md, direction: 'rtl' },
+  dashboardGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: SIZES.md },
   dashboardCard: {
     backgroundColor: COLORS.white,
     width: '48%',
@@ -190,8 +228,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  dashboardCardTitle: { color: COLORS.darkGray, fontWeight: '700' },
-  dashboardCardHint: { color: COLORS.gray, marginTop: SIZES.sm },
+  dashboardCardTitle: { color: COLORS.darkGray, fontWeight: '700', textAlign: 'right' },
+  dashboardCardHint: { color: COLORS.darkGray, marginTop: SIZES.sm, textAlign: 'right' },
 });
 
 export default WebDemoDashboardScreen;
