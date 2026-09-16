@@ -72,7 +72,7 @@ yarn install
 
 # نسخ ملف البيئة
 cp .env.example .env
-# ثم عدّل .env بمفاتيح Firebase الخاصة بك
+# ثم عدّل .env بقيم Firebase Web Config العامة
 ```
 
 ### التشغيل:
@@ -99,6 +99,20 @@ npm run ios
 - Finance & Wallets
 
 إذا بقيت قيم Firebase افتراضية في `.env` سيعمل التطبيق بوضع واجهة تجريبية فقط، وستظهر رسالة إعداد واضحة داخل الـ Dashboard.
+
+### إعداد Firebase Authentication (Email/Password)
+
+1. افتح **Firebase Console** للمشروع
+2. اذهب إلى **Authentication → Sign-in method**
+3. فعّل **Email/Password**
+4. عبّئ قيم `EXPO_PUBLIC_FIREBASE_*` في ملف `.env`
+5. أعد تشغيل Expo بعد التعديل:
+
+```bash
+npx expo start --clear
+```
+
+> ملاحظة أمان: متغيرات `EXPO_PUBLIC_*` يتم تضمينها داخل التطبيق (Client-side)، لذلك لا تضع فيها أي مفاتيح Firebase Admin أو أسرار خاصة.
 
 ---
 

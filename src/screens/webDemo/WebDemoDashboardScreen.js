@@ -30,32 +30,33 @@ const NAV_ITEMS = [
   { id: 'finance', label: 'Finance & Wallets' },
 ];
 
-const WebDemoDashboardScreen = ({ onLogout }) => {
+const WebDemoDashboardScreen = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [role, setRole] = useState('merchant');
   const [profile, setProfile] = useState(null);
   const [setupState] = useState(getFirebaseSetupState());
 
-  const demoUser = useMemo(
+  const effectiveUser = useMemo(
     () => ({
-      uid: `demo-${role}-user`,
-      displayName: `Demo ${role}`,
+      uid: currentUser?.uid || `demo-${role}-user`,
+      displayName:
+        currentUser?.displayName || currentUser?.email || profile?.displayName || `Demo ${role}`,
       role,
     }),
-    [role]
+    [currentUser?.displayName, currentUser?.email, currentUser?.uid, profile?.displayName, role]
   );
 
   useEffect(() => {
     if (!setupState.isConfigured) return undefined;
 
     upsertUserRole({
-      uid: demoUser.uid,
-      displayName: demoUser.displayName,
+      uid: effectiveUser.uid,
+      displayName: effectiveUser.displayName,
       role,
     }).catch(() => {});
 
-    return subscribeUserProfile(demoUser.uid, setProfile, () => {});
-  }, [demoUser.displayName, demoUser.uid, role, setupState.isConfigured]);
+    return subscribeUserProfile(effectiveUser.uid, setProfile, () => {});
+  }, [effectiveUser.displayName, effectiveUser.uid, role, setupState.isConfigured]);
 
   const renderDashboardHome = () => (
     <View style={styles.dashboardGrid}>
@@ -73,7 +74,7 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
   );
 
   const renderTab = () => {
-    const sharedProps = { currentUser: demoUser, setupState };
+    const sharedProps = { currentUser: effectiveUser, setupState };
 
     switch (activeTab) {
       case 'chat':
@@ -97,7 +98,7 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
         <View>
           <Text style={styles.title}>Barq Web Demo</Text>
           <Text style={styles.subtitle}>
-            User: {profile?.displayName || demoUser.displayName} ({role})
+            User: {profile?.displayName || effectiveUser.displayName} ({role})
           </Text>
         </View>
         <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
@@ -109,7 +110,7 @@ const WebDemoDashboardScreen = ({ onLogout }) => {
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>Firebase Web setup required</Text>
           <Text style={styles.warningText}>
-            Fill FIREBASE_* values in .env. Keep placeholders only for UI preview mode.
+            Fill EXPO_PUBLIC_FIREBASE_* values in .env. Keep placeholders only for UI preview mode.
           </Text>
         </View>
       )}
