@@ -149,6 +149,13 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
     [currentUserId, orders]
   );
 
+  const visibleHistoryOrders = useMemo(() => {
+    if (!isCaptain) return orders;
+    return orders.filter(
+      (order) => !(order.status === ORDER_STATUSES.PENDING && !order.assignedCaptainId)
+    );
+  }, [isCaptain, orders]);
+
   const resetCreateForm = () => {
     setPickupAddress('');
     setDeliveryAddress('');
@@ -213,7 +220,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
       setLookupLoading(true);
       setFeedbackError('');
       setLookupOrder(null);
-      const foundOrder = await getOrderById(lookupOrderId);
+      const foundOrder = await getOrderById(lookupOrderId, currentUser);
       if (!foundOrder) {
         setFeedbackError('لا يوجد طلب بهذا المعرّف.');
         return;
@@ -474,11 +481,11 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
       <Text style={styles.listTitle}>سجل طلباتي</Text>
       {loadingOrders ? (
         <ActivityIndicator color={COLORS.primary} />
-      ) : orders.length === 0 ? (
+      ) : visibleHistoryOrders.length === 0 ? (
         <Text style={styles.empty}>لا توجد طلبات حتى الآن.</Text>
       ) : (
         <FlatList
-          data={orders}
+          data={visibleHistoryOrders}
           keyExtractor={(item) => `history-${item.id}`}
           renderItem={({ item }) => renderOrderCard(item)}
         />

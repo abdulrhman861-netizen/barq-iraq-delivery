@@ -156,6 +156,9 @@ const validateCreateOrderInput = (payload) => {
   if (!payload.pickupAddress) throw new Error('عنوان الاستلام مطلوب.');
   if (!payload.deliveryAddress) throw new Error('عنوان التسليم مطلوب.');
   if (!payload.paymentMethod) throw new Error('طريقة الدفع مطلوبة.');
+  if (!Object.values(PAYMENT_METHODS).includes(payload.paymentMethod)) {
+    throw new Error('طريقة الدفع غير مدعومة.');
+  }
 
   const fee = Number(payload.feeIqd);
   if (!Number.isFinite(fee) || fee <= 0) {
@@ -269,17 +272,32 @@ export const subscribePendingOrders = (onData, onError) => {
   );
 };
 
-export const getOrderById = async (orderId) => {
+export const getOrderById = async (orderId, actor) => {
   assertConfigured();
 
   const db = getFirestoreInstance();
   if (!db) throw new Error('تعذر الاتصال بقاعدة البيانات.');
   if (!orderId?.trim()) throw new Error('معرف الطلب مطلوب.');
+  if (!actor?.uid) throw new Error('المستخدم غير معروف. الرجاء تسجيل الدخول من جديد.');
 
   const snapshot = await getDoc(doc(db, 'orders', orderId.trim()));
   if (!snapshot.exists()) return null;
 
-  return mapOrderDoc(snapshot);
+  const order = mapOrderDoc(snapshot);
+  const actorId = actor.uid;
+  const isAdmin = actor.role === 'admin';
+  const isParticipant =
+    order.createdBy === actorId ||
+    order.customerId === actorId ||
+    order.merchantId === actorId ||
+    order.assignedCaptainId === actorId ||
+    (Array.isArray(order.participantIds) && order.participantIds.includes(actorId));
+
+  if (!isAdmin && !isParticipant) {
+    throw new Error('ليس لديك صلاحية عرض هذا الطلب.');
+  }
+
+  return order;
 };
 
 export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' }) => {
