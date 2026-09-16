@@ -18,7 +18,7 @@ import {
 } from '../services/firebaseAuth';
 import { getFirebaseSetupState } from '../services/firebaseClient';
 
-const LoginScreen = () => {
+const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -29,6 +29,9 @@ const LoginScreen = () => {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [feedback, setFeedback] = useState({ type: null, message: '' });
   const setupState = getFirebaseSetupState();
+  const isConfigured = typeof isFirebaseConfigured === 'boolean'
+    ? isFirebaseConfigured
+    : setupState.isConfigured;
 
   const showError = (message) => setFeedback({ type: 'error', message });
   const showSuccess = (message) => setFeedback({ type: 'success', message });
@@ -128,6 +131,7 @@ const LoginScreen = () => {
     setFeedback({ type: null, message: '' });
     setFullName('');
     setPhone('');
+    setPassword('');
     setConfirmPassword('');
   };
 
@@ -257,7 +261,7 @@ const LoginScreen = () => {
             </View>
           )}
 
-          {!setupState.isConfigured && (
+          {!isConfigured && (
             <View style={[styles.feedbackBox, styles.feedbackWarning]}>
               <Text style={[styles.feedbackText, styles.feedbackWarningText]}>
                 يرجى إكمال إعدادات Firebase في ملف .env باستخدام متغيرات EXPO_PUBLIC_FIREBASE_*.
@@ -286,6 +290,16 @@ const LoginScreen = () => {
           >
             <Text style={styles.forgotPasswordText}>هل نسيت كلمة المرور؟</Text>
           </TouchableOpacity>
+
+          {!isConfigured && (
+            <TouchableOpacity
+              style={styles.demoButton}
+              onPress={onOpenDemoMode}
+              disabled={isLoading}
+            >
+              <Text style={styles.demoButtonText}>الدخول للوضع التجريبي بدون Firebase</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Register Link */}
@@ -428,6 +442,18 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: FONT_SIZES.base,
     fontWeight: '600',
+  },
+  demoButton: {
+    backgroundColor: COLORS.secondary,
+    borderRadius: 12,
+    paddingVertical: SIZES.sm,
+    alignItems: 'center',
+    marginBottom: SIZES.md,
+  },
+  demoButtonText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: FONT_SIZES.base,
   },
   registerContainer: {
     flexDirection: 'row',

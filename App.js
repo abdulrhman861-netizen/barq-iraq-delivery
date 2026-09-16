@@ -10,6 +10,7 @@ import { getFirebaseSetupState } from './src/services/firebaseClient';
 const App = () => {
   const [authUser, setAuthUser] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [setupState] = useState(getFirebaseSetupState());
 
   useEffect(() => {
@@ -29,10 +30,19 @@ const App = () => {
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>جاري التحقق من حالة تسجيل الدخول...</Text>
         </View>
-      ) : authUser || !setupState.isConfigured ? (
-        <WebDemoDashboardScreen currentUser={authUser} onLogout={signOutUser} />
+      ) : authUser || isDemoMode ? (
+        <WebDemoDashboardScreen
+          currentUser={authUser}
+          onLogout={async () => {
+            setIsDemoMode(false);
+            await signOutUser();
+          }}
+        />
       ) : (
-        <LoginScreen />
+        <LoginScreen
+          isFirebaseConfigured={setupState.isConfigured}
+          onOpenDemoMode={() => setIsDemoMode(true)}
+        />
       )}
     </SafeAreaView>
   );

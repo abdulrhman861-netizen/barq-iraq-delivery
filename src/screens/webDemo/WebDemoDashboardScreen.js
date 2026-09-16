@@ -35,29 +35,41 @@ const WebDemoDashboardScreen = ({ currentUser, onLogout }) => {
   const [role, setRole] = useState('merchant');
   const [profile, setProfile] = useState(null);
   const [setupState] = useState(getFirebaseSetupState());
+  const isDemoUser = !currentUser?.uid;
+  const resolvedRole = isDemoUser ? role : profile?.role || role;
 
   const effectiveUser = useMemo(
     () => ({
       uid: currentUser?.uid || `demo-${role}-user`,
       displayName:
         currentUser?.displayName || currentUser?.email || profile?.displayName || `Demo ${role}`,
-      role,
+      role: resolvedRole,
     }),
-    [currentUser?.displayName, currentUser?.email, currentUser?.uid, profile?.displayName, role]
+    [
+      currentUser?.displayName,
+      currentUser?.email,
+      currentUser?.uid,
+      isDemoUser,
+      profile?.displayName,
+      resolvedRole,
+      role,
+    ]
   );
 
   useEffect(() => {
     if (!setupState.isConfigured) return undefined;
     setProfile(null);
 
-    upsertUserRole({
-      uid: effectiveUser.uid,
-      displayName: effectiveUser.displayName,
-      role,
-    }).catch(() => {});
+    if (isDemoUser) {
+      upsertUserRole({
+        uid: effectiveUser.uid,
+        displayName: effectiveUser.displayName,
+        role,
+      }).catch(() => {});
+    }
 
     return subscribeUserProfile(effectiveUser.uid, setProfile, () => {});
-  }, [effectiveUser.displayName, effectiveUser.uid, role, setupState.isConfigured]);
+  }, [effectiveUser.displayName, effectiveUser.uid, isDemoUser, role, setupState.isConfigured]);
 
   const renderDashboardHome = () => (
     <View style={styles.dashboardGrid}>
@@ -99,7 +111,7 @@ const WebDemoDashboardScreen = ({ currentUser, onLogout }) => {
         <View>
           <Text style={styles.title}>Barq Web Demo</Text>
           <Text style={styles.subtitle}>
-            User: {profile?.displayName || effectiveUser.displayName} ({role})
+            User: {profile?.displayName || effectiveUser.displayName} ({resolvedRole})
           </Text>
         </View>
         <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
@@ -116,17 +128,19 @@ const WebDemoDashboardScreen = ({ currentUser, onLogout }) => {
         </View>
       )}
 
-      <View style={styles.roleRow}>
-        {ROLES.map((roleItem) => (
-          <TouchableOpacity
-            key={roleItem}
-            onPress={() => setRole(roleItem)}
-            style={[styles.roleButton, roleItem === role && styles.roleButtonActive]}
-          >
-            <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>{roleItem}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {isDemoUser && (
+        <View style={styles.roleRow}>
+          {ROLES.map((roleItem) => (
+            <TouchableOpacity
+              key={roleItem}
+              onPress={() => setRole(roleItem)}
+              style={[styles.roleButton, roleItem === role && styles.roleButtonActive]}
+            >
+              <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>{roleItem}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <ScrollView horizontal style={styles.navScroll} showsHorizontalScrollIndicator={false}>
         <View style={styles.navRow}>
