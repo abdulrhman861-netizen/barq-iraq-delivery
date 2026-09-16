@@ -96,6 +96,10 @@ const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
         phone,
       });
       showSuccess('تم إنشاء الحساب بنجاح ✅');
+      setPassword('');
+      setConfirmPassword('');
+      setFullName('');
+      setPhone('');
       setIsRegisterMode(false);
     } catch (err) {
       showError(err?.arabicMessage || 'فشل إنشاء الحساب.');

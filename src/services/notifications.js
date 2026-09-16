@@ -1,6 +1,6 @@
 // خدمة الإشعارات
 import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
 /**
@@ -48,7 +48,7 @@ export const getPushToken = async () => {
       return null;
     }
 
-    if (!Constants.isDevice) {
+    if (!Device.isDevice) {
       console.warn('⚠️ Push notifications only work on physical devices');
       return null;
     }
