@@ -332,13 +332,12 @@ export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' 
       );
     }
 
-    const participantIds = new Set(Array.isArray(order.participantIds) ? order.participantIds : []);
-    participantIds.add(actorId);
+    const storedParticipantIds = new Set(Array.isArray(order.participantIds) ? order.participantIds : []);
 
     const isAdmin = actor?.role === 'admin';
     const isCaptain = actor?.role === 'captain';
     const isParticipant =
-      participantIds.has(actorId) ||
+      storedParticipantIds.has(actorId) ||
       order.createdBy === actorId ||
       order.customerId === actorId ||
       order.merchantId === actorId ||
@@ -414,3 +413,5 @@ export const updateOrderStatus = async ({ orderId, nextStatus, actor, note = '' 
     transaction.update(orderRef, updates);
   });
 };
+    const participantIds = new Set(storedParticipantIds);
+    participantIds.add(actorId);

@@ -85,6 +85,7 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
   const [feedbackSuccess, setFeedbackSuccess] = useState('');
 
   const isCaptain = currentUser?.role === 'captain';
+  const canCreateOrders = currentUser?.role !== 'captain';
   const currentUserId = currentUser?.uid || '';
 
   useEffect(() => {
@@ -94,8 +95,20 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
       return;
     }
 
+    if (currentUser?.role === 'merchant') {
+      setCustomerId(currentUserId);
+      setMerchantId(currentUserId);
+      return;
+    }
+
+    if (currentUser?.role === 'captain') {
+      setCustomerId('');
+      setMerchantId('');
+      return;
+    }
+
     setCustomerId(currentUserId);
-    setMerchantId(currentUser?.role === 'merchant' ? currentUserId : '');
+    setMerchantId(currentUserId);
   }, [currentUser?.role, currentUserId]);
 
   useEffect(() => {
@@ -233,15 +246,6 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
     }
   };
 
-  const handleManualRefresh = async () => {
-    if (lookupOrderId.trim()) {
-      await handleLookupOrder();
-      return;
-    }
-    setFeedbackSuccess('القوائم محدثة لحظيًا عبر Firebase.');
-    setFeedbackError('');
-  };
-
   const getVisibleActions = (order) => {
     const allowed = getAllowedNextStatuses(order.status);
     const isAdmin = currentUser?.role === 'admin';
@@ -322,95 +326,100 @@ const CreateOrderPanel = ({ currentUser, setupState }) => {
     <View style={styles.wrapper}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>الطلبات والتوصيل ({toRoleLabel(currentUser?.role)})</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={handleManualRefresh}>
-          <Text style={styles.refreshText}>تحديث</Text>
-        </TouchableOpacity>
       </View>
 
-      <View style={styles.formBox}>
-        <Text style={styles.subTitle}>إنشاء طلب جديد</Text>
-        <TextInput
-          style={styles.input}
-          value={customerId}
-          onChangeText={setCustomerId}
-          placeholder="معرف العميل"
-          placeholderTextColor={COLORS.border}
-          textAlign="right"
-        />
-        <TextInput
-          style={styles.input}
-          value={merchantId}
-          onChangeText={setMerchantId}
-          placeholder="معرف التاجر"
-          placeholderTextColor={COLORS.border}
-          textAlign="right"
-        />
-        <TextInput
-          style={styles.input}
-          value={pickupAddress}
-          onChangeText={setPickupAddress}
-          placeholder="عنوان الاستلام"
-          placeholderTextColor={COLORS.border}
-          textAlign="right"
-        />
-        <TextInput
-          style={styles.input}
-          value={deliveryAddress}
-          onChangeText={setDeliveryAddress}
-          placeholder="عنوان التسليم"
-          placeholderTextColor={COLORS.border}
-          textAlign="right"
-        />
-        <TextInput
-          style={styles.input}
-          value={feeIqd}
-          onChangeText={setFeeIqd}
-          placeholder="رسوم التوصيل بالدينار العراقي"
-          keyboardType="numeric"
-          placeholderTextColor={COLORS.border}
-          textAlign="right"
-        />
+      {canCreateOrders ? (
+        <View style={styles.formBox}>
+          <Text style={styles.subTitle}>إنشاء طلب جديد</Text>
+          <TextInput
+            style={styles.input}
+            value={customerId}
+            onChangeText={setCustomerId}
+            placeholder="معرف العميل"
+            placeholderTextColor={COLORS.border}
+            textAlign="right"
+          />
+          <TextInput
+            style={styles.input}
+            value={merchantId}
+            onChangeText={setMerchantId}
+            placeholder="معرف التاجر"
+            placeholderTextColor={COLORS.border}
+            textAlign="right"
+          />
+          <TextInput
+            style={styles.input}
+            value={pickupAddress}
+            onChangeText={setPickupAddress}
+            placeholder="عنوان الاستلام"
+            placeholderTextColor={COLORS.border}
+            textAlign="right"
+          />
+          <TextInput
+            style={styles.input}
+            value={deliveryAddress}
+            onChangeText={setDeliveryAddress}
+            placeholder="عنوان التسليم"
+            placeholderTextColor={COLORS.border}
+            textAlign="right"
+          />
+          <TextInput
+            style={styles.input}
+            value={feeIqd}
+            onChangeText={setFeeIqd}
+            placeholder="رسوم التوصيل بالدينار العراقي"
+            keyboardType="numeric"
+            placeholderTextColor={COLORS.border}
+            textAlign="right"
+          />
 
-        <View style={styles.paymentRow}>
-          {PAYMENT_OPTIONS.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.paymentButton,
-                paymentMethod === option.value && styles.paymentButtonActive,
-              ]}
-              onPress={() => setPaymentMethod(option.value)}
-            >
-              <Text
+          <View style={styles.paymentRow}>
+            {PAYMENT_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.value}
                 style={[
-                  styles.paymentButtonText,
-                  paymentMethod === option.value && styles.paymentButtonTextActive,
+                  styles.paymentButton,
+                  paymentMethod === option.value && styles.paymentButtonActive,
                 ]}
+                onPress={() => setPaymentMethod(option.value)}
               >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.paymentButtonText,
+                    paymentMethod === option.value && styles.paymentButtonTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TextInput
+            style={[styles.input, styles.notesInput]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="ملاحظات إضافية (اختياري)"
+            placeholderTextColor={COLORS.border}
+            multiline
+            textAlign="right"
+          />
+
+          <TouchableOpacity
+            style={[styles.button, savingOrder && styles.disabled]}
+            onPress={handleCreateOrder}
+            disabled={savingOrder}
+          >
+            <Text style={styles.buttonText}>{savingOrder ? 'جاري الحفظ...' : 'إنشاء الطلب'}</Text>
+          </TouchableOpacity>
         </View>
-
-        <TextInput
-          style={[styles.input, styles.notesInput]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="ملاحظات إضافية (اختياري)"
-          placeholderTextColor={COLORS.border}
-          multiline
-          textAlign="right"
-        />
-
-        <TouchableOpacity
-          style={[styles.button, savingOrder && styles.disabled]}
-          onPress={handleCreateOrder}
-          disabled={savingOrder}
-        >
-          <Text style={styles.buttonText}>{savingOrder ? 'جاري الحفظ...' : 'إنشاء الطلب'}</Text>
-        </TouchableOpacity>
-      </View>
+      ) : (
+        <View style={styles.formBox}>
+          <Text style={styles.subTitle}>
+            إنشاء الطلب متاح للتاجر/الإدارة. يمكنك ككابتن قبول الطلبات من القائمة أدناه.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.formBox}>
         <Text style={styles.subTitle}>البحث عن طلب برقم المعرّف</Text>
@@ -510,18 +519,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.darkGray,
     textAlign: 'right',
-  },
-  refreshButton: {
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: SIZES.sm,
-    paddingVertical: 6,
-  },
-  refreshText: {
-    color: COLORS.darkGray,
-    fontWeight: '600',
   },
   formBox: {
     backgroundColor: COLORS.white,
