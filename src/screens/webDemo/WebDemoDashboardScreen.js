@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -39,12 +40,12 @@ const NAV_ITEMS = [
 const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [role, setRole] = useState(currentUser?.role || 'merchant');
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(undefined);
   const [setupState] = useState(getFirebaseSetupState());
   const isDemoUser = !currentUser?.uid;
-  const authenticatedFallbackRole =
-    currentUser?.role && ROLES.includes(currentUser.role) ? currentUser.role : 'merchant';
-  const resolvedRole = isDemoUser ? role : profile?.role || authenticatedFallbackRole;
+  const isAuthenticatedProfileLoading =
+    !isDemoUser && setupState.isConfigured && typeof profile === 'undefined';
+  const resolvedRole = isDemoUser ? role : profile?.role || 'merchant';
 
   useEffect(() => {
     if (currentUser?.role && ROLES.includes(currentUser.role)) {
@@ -80,9 +81,9 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
       return undefined;
     }
 
-    setProfile(null);
-    return subscribeUserProfile(effectiveUser.uid, setProfile, () => {});
-  }, [effectiveUser.uid, isDemoUser, setupState.isConfigured]);
+    setProfile(undefined);
+    return subscribeUserProfile(currentUser.uid, setProfile, () => {});
+  }, [currentUser?.uid, isDemoUser, setupState.isConfigured]);
 
   const renderDashboardHome = () => (
     <View style={styles.dashboardGrid}>
@@ -96,6 +97,13 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
           <Text style={styles.dashboardCardHint}>فتح</Text>
         </TouchableOpacity>
       ))}
+    </View>
+  );
+
+  const renderProfileLoading = () => (
+    <View style={styles.loadingState}>
+      <ActivityIndicator size="large" color={COLORS.primary} />
+      <Text style={styles.loadingStateText}>جاري تحميل بيانات الحساب...</Text>
     </View>
   );
 
@@ -124,7 +132,9 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
         <View>
           <Text style={styles.title}>برق العراق</Text>
           <Text style={styles.subtitle}>
-            المستخدم: {profile?.displayName || effectiveUser.displayName} ({ROLE_LABELS[resolvedRole] || resolvedRole})
+            {isAuthenticatedProfileLoading
+              ? 'جاري تحميل بيانات الحساب...'
+              : `المستخدم: ${profile?.displayName || effectiveUser.displayName} (${ROLE_LABELS[resolvedRole] || resolvedRole})`}
           </Text>
         </View>
         <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
@@ -171,7 +181,9 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
         </View>
       </ScrollView>
 
-      <View style={styles.content}>{renderTab()}</View>
+      <View style={styles.content}>
+        {isAuthenticatedProfileLoading ? renderProfileLoading() : renderTab()}
+      </View>
     </SafeAreaView>
   );
 };
@@ -225,6 +237,8 @@ const styles = StyleSheet.create({
   navText: { color: COLORS.darkGray, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   navTextActive: { color: COLORS.white },
   content: { flex: 1, padding: SIZES.md, direction: 'rtl' },
+  loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SIZES.sm },
+  loadingStateText: { color: COLORS.darkGray, fontSize: FONT_SIZES.base, textAlign: 'center' },
   dashboardGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: SIZES.md },
   dashboardCard: {
     backgroundColor: COLORS.white,
