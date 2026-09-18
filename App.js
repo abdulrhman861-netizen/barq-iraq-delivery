@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import WebDemoDashboardScreen from './src/screens/webDemo/WebDemoDashboardScreen';
 import { initializeNotifications } from './src/services/notifications';
@@ -41,7 +41,12 @@ const App = () => {
               setIsDemoMode(false);
               return;
             }
-            await signOutUser();
+            try {
+              await signOutUser();
+            } catch (error) {
+              console.warn('⚠️ Failed to sign out:', error);
+              Alert.alert('تعذر تسجيل الخروج', 'حدث خطأ أثناء تسجيل الخروج. حاول مرة أخرى.');
+            }
           }}
         />
       ) : (

@@ -106,6 +106,10 @@ const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
 
   const handleForgotPassword = async () => {
     try {
+      if (!isConfigured) {
+        showError('يرجى إكمال إعدادات Firebase أولاً لاستخدام إعادة تعيين كلمة المرور.');
+        return;
+      }
       if (!email.trim()) {
         showError('أدخل البريد الإلكتروني أولاً لإرسال رابط إعادة التعيين.');
         return;
@@ -288,7 +292,7 @@ const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
             <TouchableOpacity
               style={styles.forgotPasswordContainer}
               onPress={handleForgotPassword}
-              disabled={isLoading}
+              disabled={isLoading || !isConfigured}
             >
               <Text style={styles.forgotPasswordText}>هل نسيت كلمة المرور؟</Text>
             </TouchableOpacity>
