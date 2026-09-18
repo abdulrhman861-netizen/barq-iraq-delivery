@@ -16,7 +16,6 @@ import {
   registerWithEmail,
   resetPasswordByEmail,
 } from '../services/firebaseAuth';
-import { getFirebaseSetupState } from '../services/firebaseClient';
 
 const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
   const [fullName, setFullName] = useState('');
@@ -28,10 +27,7 @@ const LoginScreen = ({ isFirebaseConfigured, onOpenDemoMode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [feedback, setFeedback] = useState({ type: null, message: '' });
-  const setupState = getFirebaseSetupState();
-  const isConfigured = typeof isFirebaseConfigured === 'boolean'
-    ? isFirebaseConfigured
-    : setupState.isConfigured;
+  const isConfigured = Boolean(isFirebaseConfigured);
 
   const showError = (message) => setFeedback({ type: 'error', message });
   const showSuccess = (message) => setFeedback({ type: 'success', message });
