@@ -11,7 +11,6 @@ import { COLORS, FONT_SIZES, SIZES } from '../../constants';
 import {
   getFirebaseSetupState,
   subscribeUserProfile,
-  upsertUserRole,
 } from '../../services/firestoreWebDemo';
 import ChatPanel from './ChatPanel';
 import RatingsPanel from './RatingsPanel';
@@ -73,16 +72,13 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
 
   useEffect(() => {
     if (!setupState.isConfigured) return undefined;
-    setProfile(null);
 
     if (isDemoUser) {
-      upsertUserRole({
-        uid: effectiveUser.uid,
-        displayName: effectiveUser.displayName,
-        role,
-      }).catch(() => {});
+      setProfile(null);
+      return undefined;
     }
 
+    setProfile(null);
     return subscribeUserProfile(effectiveUser.uid, setProfile, () => {});
   }, [effectiveUser.displayName, effectiveUser.uid, isDemoUser, role, setupState.isConfigured]);
 

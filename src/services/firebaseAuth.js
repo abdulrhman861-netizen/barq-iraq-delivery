@@ -68,7 +68,7 @@ const upsertAuthUserProfile = async ({
     payload.phone = phone.trim();
   }
 
-  if (defaultRole) {
+  if (defaultRole && includeCreatedAt) {
     payload.role = defaultRole;
   }
 
