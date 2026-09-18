@@ -1,4 +1,3 @@
-import { getApp, getApps, initializeApp } from 'firebase/app';
 import {
   addDoc,
   collection,
@@ -15,28 +14,10 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { FIREBASE_CONFIG } from '../constants/firebase';
+import { getFirebaseApp, getFirebaseSetupState } from './firebaseClient';
 
 let firestoreInstance = null;
-
-const FIREBASE_REQUIRED_FIELDS = [
-  'apiKey',
-  'authDomain',
-  'projectId',
-  'storageBucket',
-  'messagingSenderId',
-  'appId',
-];
-
-const isPlaceholder = (value = '') => {
-  const normalized = String(value).toLowerCase();
-  return (
-    !normalized ||
-    normalized.includes('your_') ||
-    normalized.includes('yourproject') ||
-    normalized.includes('example')
-  );
-};
+export { getFirebaseSetupState };
 
 const normalizeTimestamp = (value) => {
   if (!value) return null;
@@ -57,24 +38,12 @@ const mapDoc = (snapshot) => {
   };
 };
 
-export const getFirebaseSetupState = () => {
-  const missingFields = FIREBASE_REQUIRED_FIELDS.filter((field) => !FIREBASE_CONFIG[field]);
-  const hasPlaceholderValues = FIREBASE_REQUIRED_FIELDS.some((field) => isPlaceholder(FIREBASE_CONFIG[field]));
-
-  return {
-    isConfigured: missingFields.length === 0 && !hasPlaceholderValues,
-    missingFields,
-    hasPlaceholderValues,
-  };
-};
-
 const getFirestoreInstance = () => {
   if (firestoreInstance) return firestoreInstance;
 
-  const { isConfigured } = getFirebaseSetupState();
-  if (!isConfigured) return null;
+  const app = getFirebaseApp();
+  if (!app) return null;
 
-  const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
   firestoreInstance = getFirestore(app);
   return firestoreInstance;
 };

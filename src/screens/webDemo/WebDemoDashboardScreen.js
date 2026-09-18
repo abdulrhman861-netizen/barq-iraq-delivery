@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -11,7 +12,6 @@ import { COLORS, FONT_SIZES, SIZES } from '../../constants';
 import {
   getFirebaseSetupState,
   subscribeUserProfile,
-  upsertUserRole,
 } from '../../services/firestoreWebDemo';
 import ChatPanel from './ChatPanel';
 import RatingsPanel from './RatingsPanel';
@@ -40,8 +40,12 @@ const NAV_ITEMS = [
 const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [role, setRole] = useState(currentUser?.role || 'merchant');
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(undefined);
   const [setupState] = useState(getFirebaseSetupState());
+  const isDemoUser = !currentUser?.uid;
+  const isAuthenticatedProfileLoading =
+    !isDemoUser && setupState.isConfigured && typeof profile === 'undefined';
+  const resolvedRole = isDemoUser ? role : profile?.role || 'merchant';
 
   useEffect(() => {
     if (currentUser?.role && ROLES.includes(currentUser.role)) {
@@ -49,36 +53,37 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
     }
   }, [currentUser?.role]);
 
-  const fallbackDemoUser = useMemo(
+  const effectiveUser = useMemo(
     () => ({
-      uid: `demo-${role}-user`,
-      displayName: `Demo ${role}`,
-      role,
+      uid: currentUser?.uid || `demo-${role}-user`,
+      displayName:
+        currentUser?.displayName ||
+        currentUser?.email ||
+        profile?.displayName ||
+        `مستخدم ${ROLE_LABELS[resolvedRole] || resolvedRole}`,
+      role: resolvedRole,
     }),
-    [role]
+    [
+      currentUser?.displayName,
+      currentUser?.email,
+      currentUser?.uid,
+      profile?.displayName,
+      resolvedRole,
+      role,
+    ]
   );
 
-  const dashboardUser = useMemo(() => {
-    if (!currentUser?.uid) return fallbackDemoUser;
-
-    return {
-      uid: currentUser.uid,
-      displayName: currentUser.displayName || `مستخدم ${ROLE_LABELS[role] || role}`,
-      role,
-    };
-  }, [currentUser?.displayName, currentUser?.uid, fallbackDemoUser, role]);
-
   useEffect(() => {
-    if (!setupState.isConfigured || !dashboardUser?.uid) return undefined;
+    if (!setupState.isConfigured) return undefined;
 
-    upsertUserRole({
-      uid: dashboardUser.uid,
-      displayName: dashboardUser.displayName,
-      role,
-    }).catch(() => {});
+    if (isDemoUser) {
+      setProfile(null);
+      return undefined;
+    }
 
-    return subscribeUserProfile(dashboardUser.uid, setProfile, () => {});
-  }, [dashboardUser.displayName, dashboardUser.uid, role, setupState.isConfigured]);
+    setProfile(undefined);
+    return subscribeUserProfile(currentUser.uid, setProfile, () => {});
+  }, [currentUser?.uid, isDemoUser, setupState.isConfigured]);
 
   const renderDashboardHome = () => (
     <View style={styles.dashboardGrid}>
@@ -95,8 +100,15 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
     </View>
   );
 
+  const renderProfileLoading = () => (
+    <View style={styles.loadingState}>
+      <ActivityIndicator size="large" color={COLORS.primary} />
+      <Text style={styles.loadingStateText}>جاري تحميل بيانات الحساب...</Text>
+    </View>
+  );
+
   const renderTab = () => {
-    const sharedProps = { currentUser: dashboardUser, setupState };
+    const sharedProps = { currentUser: effectiveUser, setupState };
 
     switch (activeTab) {
       case 'chat':
@@ -120,7 +132,9 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
         <View>
           <Text style={styles.title}>برق العراق</Text>
           <Text style={styles.subtitle}>
-            المستخدم: {profile?.displayName || dashboardUser.displayName} ({ROLE_LABELS[role] || role})
+            {isAuthenticatedProfileLoading
+              ? 'جاري تحميل بيانات الحساب...'
+              : `المستخدم: ${profile?.displayName || effectiveUser.displayName} (${ROLE_LABELS[resolvedRole] || resolvedRole})`}
           </Text>
         </View>
         <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
@@ -132,24 +146,26 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>إعداد Firebase للويب مطلوب</Text>
           <Text style={styles.warningText}>
-            أضف قيم FIREBASE_* الحقيقية داخل .env لتفعيل البيانات الفعلية.
+            أضف قيم EXPO_PUBLIC_FIREBASE_* الحقيقية داخل .env لتفعيل البيانات الفعلية، أو استخدم الوضع التجريبي للمعاينة فقط.
           </Text>
         </View>
       )}
 
-      <View style={styles.roleRow}>
-        {ROLES.map((roleItem) => (
-          <TouchableOpacity
-            key={roleItem}
-            onPress={() => setRole(roleItem)}
-            style={[styles.roleButton, roleItem === role && styles.roleButtonActive]}
-          >
-            <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>
-              {ROLE_LABELS[roleItem]}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {isDemoUser && (
+        <View style={styles.roleRow}>
+          {ROLES.map((roleItem) => (
+            <TouchableOpacity
+              key={roleItem}
+              onPress={() => setRole(roleItem)}
+              style={[styles.roleButton, roleItem === role && styles.roleButtonActive]}
+            >
+              <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>
+                {ROLE_LABELS[roleItem]}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <ScrollView horizontal style={styles.navScroll} showsHorizontalScrollIndicator={false}>
         <View style={styles.navRow}>
@@ -165,7 +181,9 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
         </View>
       </ScrollView>
 
-      <View style={styles.content}>{renderTab()}</View>
+      <View style={styles.content}>
+        {isAuthenticatedProfileLoading ? renderProfileLoading() : renderTab()}
+      </View>
     </SafeAreaView>
   );
 };
@@ -219,6 +237,8 @@ const styles = StyleSheet.create({
   navText: { color: COLORS.darkGray, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   navTextActive: { color: COLORS.white },
   content: { flex: 1, padding: SIZES.md, direction: 'rtl' },
+  loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SIZES.sm },
+  loadingStateText: { color: COLORS.darkGray, fontSize: FONT_SIZES.base, textAlign: 'center' },
   dashboardGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: SIZES.md },
   dashboardCard: {
     backgroundColor: COLORS.white,

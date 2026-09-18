@@ -48,7 +48,7 @@ export const getPushToken = async () => {
       return null;
     }
 
-    if (!Device.isDevice) {
+    if (Device.isDevice !== true) {
       console.warn('⚠️ Push notifications only work on physical devices');
       return null;
     }

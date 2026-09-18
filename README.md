@@ -72,7 +72,7 @@ yarn install
 
 # نسخ ملف البيئة
 cp .env.example .env
-# ثم عدّل .env بمفاتيح Firebase الخاصة بك
+# ثم عدّل .env بقيم Firebase Web Config العامة
 ```
 
 ### التشغيل:
@@ -99,6 +99,20 @@ npm run ios
 - Finance & Wallets
 
 إذا بقيت قيم Firebase افتراضية في `.env` سيعمل التطبيق بوضع واجهة تجريبية فقط، وستظهر رسالة إعداد واضحة داخل الـ Dashboard.
+
+### إعداد Firebase Authentication (Email/Password)
+
+1. افتح **Firebase Console** للمشروع
+2. اذهب إلى **Authentication → Sign-in method**
+3. فعّل **Email/Password**
+4. عبّئ قيم `EXPO_PUBLIC_FIREBASE_*` في ملف `.env`
+5. أعد تشغيل Expo بعد التعديل:
+
+```bash
+npx expo start --clear
+```
+
+> ملاحظة أمان: متغيرات `EXPO_PUBLIC_*` يتم تضمينها داخل التطبيق (Client-side)، لذلك لا تضع فيها أي مفاتيح Firebase Admin أو أسرار خاصة.
 
 ---
 
@@ -132,7 +146,7 @@ npm run ios
 
 ### 🧪 خطوات اختبار سريعة
 
-1. جهّز Firebase في `.env` بقيم حقيقية لـ `FIREBASE_*`.
+1. جهّز Firebase في `.env` بقيم حقيقية لـ `EXPO_PUBLIC_FIREBASE_*`.
 2. شغّل التطبيق: `npm start` ثم افتح الويب (`w`).
 3. سجّل الدخول وادخل إلى **الطلبات والتوصيل** بدور تاجر/عميل وأنشئ طلبًا جديدًا.
 4. بدّل الدور إلى **كابتن** من شريط الأدوار.
@@ -145,12 +159,21 @@ npm run ios
 
 الحد الأدنى المطلوب إنتاجيًا:
 
+- السماح للمستخدم الموثق بقراءة/إنشاء/تحديث ملفه الشخصي فقط داخل `users/{uid}` لأن التسجيل عبر Firebase Authentication ينشئ هذا المستند من العميل لأول مرة.
 - منع قراءة/كتابة `orders` لغير المستخدمين الموثقين.
 - تقييد القراءة بحيث لا يرى الطلب إلا أطرافه (`createdBy`, `customerId`, `merchantId`, `assignedCaptainId`) أو أدوار إدارية مصرح لها.
 - تقييد تحديث الحالة وفق الدور والانتقال الصحيح (مثلاً قبول الطلب للكابتن، وإنهاء التسليم للكابتن المعيّن أو الإدارة).
 - التحقق من الحقول الحساسة (`feeIqd`, `paymentMethod`, `status`) داخل القواعد وعدم الاعتماد على العميل فقط.
 
 > ملاحظة: هذا المستودع لا يطبق قواعد إنتاجية نهائية تلقائيًا. يجب نشر قواعد Firestore محكمة قبل الإطلاق.
+
+مثال حد أدنى لمسار المستخدمين:
+
+```text
+match /users/{uid} {
+  allow read, create, update: if request.auth != null && request.auth.uid == uid;
+}
+```
 
 ---
 
