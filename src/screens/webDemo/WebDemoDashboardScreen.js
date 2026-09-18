@@ -42,7 +42,9 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
   const [profile, setProfile] = useState(null);
   const [setupState] = useState(getFirebaseSetupState());
   const isDemoUser = !currentUser?.uid;
-  const resolvedRole = isDemoUser ? role : profile?.role || role;
+  const authenticatedFallbackRole =
+    currentUser?.role && ROLES.includes(currentUser.role) ? currentUser.role : 'merchant';
+  const resolvedRole = isDemoUser ? role : profile?.role || authenticatedFallbackRole;
 
   useEffect(() => {
     if (currentUser?.role && ROLES.includes(currentUser.role)) {
@@ -80,7 +82,7 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
 
     setProfile(null);
     return subscribeUserProfile(effectiveUser.uid, setProfile, () => {});
-  }, [effectiveUser.displayName, effectiveUser.uid, isDemoUser, role, setupState.isConfigured]);
+  }, [effectiveUser.uid, isDemoUser, setupState.isConfigured]);
 
   const renderDashboardHome = () => (
     <View style={styles.dashboardGrid}>
