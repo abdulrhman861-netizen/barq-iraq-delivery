@@ -42,6 +42,8 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
   const [role, setRole] = useState(currentUser?.role || 'merchant');
   const [profile, setProfile] = useState(null);
   const [setupState] = useState(getFirebaseSetupState());
+  const isDemoUser = !currentUser?.uid;
+  const resolvedRole = isDemoUser ? role : profile?.role || role;
 
   useEffect(() => {
     if (currentUser?.role && ROLES.includes(currentUser.role)) {
@@ -49,36 +51,40 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
     }
   }, [currentUser?.role]);
 
-  const fallbackDemoUser = useMemo(
+  const effectiveUser = useMemo(
     () => ({
-      uid: `demo-${role}-user`,
-      displayName: `Demo ${role}`,
-      role,
+      uid: currentUser?.uid || `demo-${role}-user`,
+      displayName:
+        currentUser?.displayName ||
+        currentUser?.email ||
+        profile?.displayName ||
+        `مستخدم ${ROLE_LABELS[resolvedRole] || resolvedRole}`,
+      role: resolvedRole,
     }),
-    [role]
+    [
+      currentUser?.displayName,
+      currentUser?.email,
+      currentUser?.uid,
+      profile?.displayName,
+      resolvedRole,
+      role,
+    ]
   );
 
-  const dashboardUser = useMemo(() => {
-    if (!currentUser?.uid) return fallbackDemoUser;
-
-    return {
-      uid: currentUser.uid,
-      displayName: currentUser.displayName || `مستخدم ${ROLE_LABELS[role] || role}`,
-      role,
-    };
-  }, [currentUser?.displayName, currentUser?.uid, fallbackDemoUser, role]);
-
   useEffect(() => {
-    if (!setupState.isConfigured || !dashboardUser?.uid) return undefined;
+    if (!setupState.isConfigured) return undefined;
+    setProfile(null);
 
-    upsertUserRole({
-      uid: dashboardUser.uid,
-      displayName: dashboardUser.displayName,
-      role,
-    }).catch(() => {});
+    if (isDemoUser) {
+      upsertUserRole({
+        uid: effectiveUser.uid,
+        displayName: effectiveUser.displayName,
+        role,
+      }).catch(() => {});
+    }
 
-    return subscribeUserProfile(dashboardUser.uid, setProfile, () => {});
-  }, [dashboardUser.displayName, dashboardUser.uid, role, setupState.isConfigured]);
+    return subscribeUserProfile(effectiveUser.uid, setProfile, () => {});
+  }, [effectiveUser.displayName, effectiveUser.uid, isDemoUser, role, setupState.isConfigured]);
 
   const renderDashboardHome = () => (
     <View style={styles.dashboardGrid}>
@@ -96,7 +102,7 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
   );
 
   const renderTab = () => {
-    const sharedProps = { currentUser: dashboardUser, setupState };
+    const sharedProps = { currentUser: effectiveUser, setupState };
 
     switch (activeTab) {
       case 'chat':
@@ -120,7 +126,7 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
         <View>
           <Text style={styles.title}>برق العراق</Text>
           <Text style={styles.subtitle}>
-            المستخدم: {profile?.displayName || dashboardUser.displayName} ({ROLE_LABELS[role] || role})
+            المستخدم: {profile?.displayName || effectiveUser.displayName} ({ROLE_LABELS[resolvedRole] || resolvedRole})
           </Text>
         </View>
         <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
@@ -132,24 +138,26 @@ const WebDemoDashboardScreen = ({ onLogout, currentUser }) => {
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>إعداد Firebase للويب مطلوب</Text>
           <Text style={styles.warningText}>
-            أضف قيم FIREBASE_* الحقيقية داخل .env لتفعيل البيانات الفعلية.
+            أضف قيم EXPO_PUBLIC_FIREBASE_* الحقيقية داخل .env لتفعيل البيانات الفعلية، أو استخدم الوضع التجريبي للمعاينة فقط.
           </Text>
         </View>
       )}
 
-      <View style={styles.roleRow}>
-        {ROLES.map((roleItem) => (
-          <TouchableOpacity
-            key={roleItem}
-            onPress={() => setRole(roleItem)}
-            style={[styles.roleButton, roleItem === role && styles.roleButtonActive]}
-          >
-            <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>
-              {ROLE_LABELS[roleItem]}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {isDemoUser && (
+        <View style={styles.roleRow}>
+          {ROLES.map((roleItem) => (
+            <TouchableOpacity
+              key={roleItem}
+              onPress={() => setRole(roleItem)}
+              style={[styles.roleButton, roleItem === role && styles.roleButtonActive]}
+            >
+              <Text style={[styles.roleText, roleItem === role && styles.roleTextActive]}>
+                {ROLE_LABELS[roleItem]}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <ScrollView horizontal style={styles.navScroll} showsHorizontalScrollIndicator={false}>
         <View style={styles.navRow}>
